@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Le plugin officiel Next.js gère App Router, API routes, middleware et SSR
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

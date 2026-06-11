@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-950 text-white;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/5 backdrop-blur-sm border border-white/10;
+  }
+  .glass-strong {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  10%  { transform: translateX(0); }
+  90%  { transform: translateX(var(--marquee-offset)); }
+  100% { transform: translateX(var(--marquee-offset)); }
+}
+
+.marquee-container {
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+}
+
+.marquee-text {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 6s ease-in-out infinite alternate;
+}
+
+.marquee-static {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
