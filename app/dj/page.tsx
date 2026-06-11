@@ -18,9 +18,8 @@ function DJAuth() {
   const [error, setError] = useState('')
   const [signupSuccess, setSignupSuccess] = useState(false)
 
-  const supabase = createClient()
-
   async function handleGoogle() {
+    const supabase = createClient()
     setGoogleLoading(true)
     setError('')
     const { error } = await supabase.auth.signInWithOAuth({
@@ -36,6 +35,7 @@ function DJAuth() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!email.trim() || !password) return
+    const supabase = createClient()
     setLoading(true)
     setError('')
 

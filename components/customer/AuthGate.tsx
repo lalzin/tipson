@@ -16,9 +16,8 @@ export default function AuthGate({ sessionName, djName, onAuth }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const supabase = createClient()
-
   async function signInWithGoogle() {
+    const supabase = createClient()
     setLoading(true)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -33,6 +32,7 @@ export default function AuthGate({ sessionName, djName, onAuth }: Props) {
   async function signInWithEmail(e: React.FormEvent) {
     e.preventDefault()
     if (!email.trim()) return
+    const supabase = createClient()
     setLoading(true)
     setError('')
     const { error } = await supabase.auth.signInWithOtp({

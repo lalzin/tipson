@@ -4,6 +4,9 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # Clés NON secrètes (mode public + variables NEXT_PUBLIC_* intégrées au bundle client).
+  # Les vrais secrets (SERVICE_ROLE, PAYPAL_CLIENT_SECRET, SPOTIFY_CLIENT_SECRET) restent scannés.
+  SECRETS_SCAN_OMIT_KEYS = "PAYPAL_MODE,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,NEXT_PUBLIC_PAYPAL_CLIENT_ID,NEXT_PUBLIC_APP_URL"
 
 # Le plugin officiel Next.js gère App Router, API routes, middleware et SSR
 [[plugins]]
