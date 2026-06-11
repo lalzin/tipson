@@ -10,7 +10,7 @@ import type { Session, SearchTrack, Request } from '@/types'
 import { cn, formatPrice } from '@/lib/utils'
 import dynamic from 'next/dynamic'
 
-const PayPalButton = dynamic(() => import('@/components/PayPalButton'), { ssr: false })
+const StripePaymentForm = dynamic(() => import('@/components/StripePaymentForm'), { ssr: false })
 
 type KaraokeStep = 'search' | 'select-option' | 'form' | 'payment' | 'queue'
 
@@ -192,7 +192,7 @@ export default function KaraokeView({ session, user, guestMode, sessionId }: Pro
                   {wasInQueue
                     ? <>
                         Vous étiez dans la file mais la soirée s&apos;est terminée.<br />
-                        Nous nous en excusons{request && request.amount > 0 ? ' — vous avez été remboursé instantanément sur PayPal' : ''}.
+                        Nous nous en excusons{request && request.amount > 0 ? ' — vous n\'avez pas été débité' : ''}.
                       </>
                     : <>Le karaoké est maintenant terminé.<br />Merci d&apos;avoir participé, on espère vous revoir bientôt !</>
                   }
@@ -376,7 +376,7 @@ export default function KaraokeView({ session, user, guestMode, sessionId }: Pro
           </div>
 
           <p className="text-center text-gray-600 text-xs">
-            Paiement via PayPal · Remboursé si votre passage est annulé
+            Paiement sécurisé par Stripe · débité seulement si confirmé
           </p>
         </div>
       </main>
@@ -412,16 +412,16 @@ export default function KaraokeView({ session, user, guestMode, sessionId }: Pro
             </div>
           </div>
           <div className="w-full">
-            <PayPalButton
+            <StripePaymentForm
               requestId={request.id}
               amount={currentPrice}
               onSuccess={() => { setRequest(prev => prev ? { ...prev, status: 'paid' } : prev); setStep('queue') }}
-              onError={() => alert('Paiement échoué, réessayez.')}
+              onError={(err) => console.error(err)}
             />
           </div>
           <div className="flex items-center gap-2 text-gray-600 text-xs">
             <ShieldCheck className="w-4 h-4 text-green-600" />
-            Remboursé si votre passage est annulé
+            Débité seulement si votre passage est confirmé
           </div>
         </div>
       </main>

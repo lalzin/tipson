@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@paypal/react-paypal-js": "^10.0.0",
-    "@stripe/stripe-js": "^4.1.0",
+    "@stripe/react-stripe-js": "^2.9.0",
+    "@stripe/stripe-js": "^4.10.0",
     "@supabase/ssr": "^0.4.1",
     "@supabase/supabase-js": "^2.108.1",
     "clsx": "^2.1.1",
@@ -18,7 +18,7 @@
     "next": "14.2.5",
     "react": "^18",
     "react-dom": "^18",
-    "stripe": "^16.2.0",
+    "stripe": "^17.7.0",
     "tailwind-merge": "^2.4.0"
   },
   "devDependencies": {

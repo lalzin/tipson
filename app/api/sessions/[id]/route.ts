@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase-server'
-import { refundPayPalCapture } from '@/lib/paypal'
+import { cancelPayment } from '@/lib/stripe'
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = await createServerSupabaseClient()
@@ -86,25 +86,25 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Remboursements en arrière-plan — ne bloque pas la réponse
+  // Clôture : annule les autorisations Stripe en attente (aucun débit, aucun frais)
   if (body.status === 'ended') {
     admin
       .from('requests')
-      .select('id, amount, paypal_capture_id')
+      .select('id, stripe_payment_intent_id')
       .eq('session_id', params.id)
       .in('status', ['paid', 'approved', 'pending_payment'])
       .then(({ data: pendingRequests }) => {
         if (!pendingRequests?.length) return
         pendingRequests.forEach(async (r) => {
           try {
-            if (r.paypal_capture_id) {
-              await refundPayPalCapture(r.paypal_capture_id, r.amount)
+            if (r.stripe_payment_intent_id) {
+              await cancelPayment(r.stripe_payment_intent_id)
               await admin.from('requests').update({ status: 'rejected', refunded: true }).eq('id', r.id)
             } else {
               await admin.from('requests').update({ status: 'rejected' }).eq('id', r.id)
             }
           } catch (err) {
-            console.error(`Refund failed for request ${r.id}:`, err)
+            console.error(`Cancel failed for request ${r.id}:`, err)
             await admin.from('requests').update({ status: 'rejected' }).eq('id', r.id)
           }
         })

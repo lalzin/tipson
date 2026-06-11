@@ -8,7 +8,6 @@ export default function DJSettingsPage() {
   const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [djName, setDjName] = useState('')
-  const [paypalUrl, setPaypalUrl] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -19,7 +18,6 @@ export default function DJSettingsPage() {
       .then(p => {
         setProfile(p)
         setDjName(p.dj_name || '')
-        setPaypalUrl(p.paypal_me_url || '')
         setLoading(false)
       })
   }, [])
@@ -29,20 +27,10 @@ export default function DJSettingsPage() {
     setSaving(true)
     setSaved(false)
 
-    // Normalise l'URL PayPal
-    let normalizedPaypal = paypalUrl.trim()
-    if (normalizedPaypal && !normalizedPaypal.startsWith('https://')) {
-      if (normalizedPaypal.startsWith('paypal.me/')) {
-        normalizedPaypal = `https://${normalizedPaypal}`
-      } else if (!normalizedPaypal.includes('/')) {
-        normalizedPaypal = `https://paypal.me/${normalizedPaypal}`
-      }
-    }
-
     await fetch('/api/profile', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dj_name: djName, paypal_me_url: normalizedPaypal }),
+      body: JSON.stringify({ dj_name: djName }),
     })
 
     setSaving(false)
@@ -83,28 +71,16 @@ export default function DJSettingsPage() {
             />
           </div>
 
-          {/* PayPal */}
+          {/* Paiements — centralisés */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Lien PayPal.me</label>
-            <input
-              type="text"
-              value={paypalUrl}
-              onChange={e => setPaypalUrl(e.target.value)}
-              placeholder="paypal.me/votrenom  ou  VotreNom"
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 transition"
-            />
-            <p className="text-gray-500 text-xs">
-              Entrez votre identifiant PayPal.me (ex: <code className="text-gray-400">paypal.me/djshadow</code>).
-              Les clients seront redirigés vers ce lien avec le montant pré-rempli.
-            </p>
-            {paypalUrl && (
-              <div className="bg-white/5 rounded-xl p-3">
-                <p className="text-gray-400 text-xs">Aperçu lien :</p>
-                <p className="text-purple-300 text-sm font-mono break-all">
-                  {paypalUrl.startsWith('https://') ? paypalUrl : `https://paypal.me/${paypalUrl.replace('paypal.me/', '')}`}/2,00
-                </p>
-              </div>
-            )}
+            <label className="text-sm font-medium text-gray-300">Paiements</label>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-1.5">
+              <p className="text-gray-300 text-sm font-medium">💳 Encaissement automatique via Stripe</p>
+              <p className="text-gray-500 text-xs leading-relaxed">
+                Les pourboires sont encaissés de façon sécurisée — aucune configuration de ta part.
+                Les versements vers les organisateurs seront gérés depuis ton espace (à venir).
+              </p>
+            </div>
           </div>
 
           <button

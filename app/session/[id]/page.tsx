@@ -14,7 +14,7 @@ import dynamic from 'next/dynamic'
 import AuthGate from '@/components/customer/AuthGate'
 import KaraokeView from '@/components/customer/KaraokeView'
 
-const PayPalButton = dynamic(() => import('@/components/PayPalButton'), { ssr: false })
+const StripePaymentForm = dynamic(() => import('@/components/StripePaymentForm'), { ssr: false })
 
 type Step = 'search' | 'select-option' | 'form' | 'payment' | 'tracking'
 
@@ -342,7 +342,7 @@ export default function SessionPage() {
         bg: 'from-red-950/20 via-gray-950 to-gray-950',
         badge: 'bg-red-500/20 text-red-300 border-red-500/30',
         title: 'Refusée',
-        sub: request.amount > 0 ? 'Le DJ n\'a pas pu passer ce son. Vous êtes remboursé instantanément sur votre compte PayPal.' : 'Le DJ n\'a pas pu passer ce son.',
+        sub: request.amount > 0 ? 'Le DJ n\'a pas pu passer ce son. Vous n\'avez pas été débité.' : 'Le DJ n\'a pas pu passer ce son.',
       },
       pending_payment: {
         icon: <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />,
@@ -443,28 +443,25 @@ export default function SessionPage() {
             </div>
           </div>
 
-          {/* Bouton PayPal SDK */}
+          {/* Paiement Stripe */}
           {request && (
             <div className="w-full">
-              <PayPalButton
+              <StripePaymentForm
                 requestId={request.id}
                 amount={amount}
-                onSuccess={(captured) => {
-                  setRequest(captured)
+                onSuccess={(updated) => {
+                  setRequest(updated as Request)
                   setStep('tracking')
                 }}
-                onError={(err) => {
-                  console.error(err)
-                  alert('Paiement échoué ou annulé. Réessayez.')
-                }}
+                onError={(err) => console.error(err)}
               />
             </div>
           )}
 
-          {/* Garantie remboursement */}
+          {/* Garantie */}
           <div className="flex items-center gap-2 text-gray-600 text-xs">
             <ShieldCheck className="w-4 h-4 text-green-600 flex-shrink-0" />
-            Remboursement automatique si le DJ ne peut pas passer votre son
+            Vous n&apos;êtes débité que si le DJ accepte votre son
           </div>
         </div>
       </main>
@@ -618,7 +615,7 @@ export default function SessionPage() {
           </div>
 
           <p className="text-center text-gray-600 text-xs">
-            Paiement via PayPal · Remboursement si le DJ ne peut pas passer votre son
+            Paiement sécurisé par Stripe · débité seulement si le DJ accepte
           </p>
         </div>
       </main>

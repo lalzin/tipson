@@ -120,7 +120,7 @@ export default function LandingPage() {
       <section className="relative max-w-6xl mx-auto px-5 sm:px-8 py-12 sm:py-20">
         <div className="grid sm:grid-cols-3 gap-5">
           {[
-            { icon: ShieldCheck, title: 'Paiement sécurisé', desc: 'Transactions via PayPal, remboursement automatique si non joué.' },
+            { icon: ShieldCheck, title: 'Paiement sécurisé', desc: 'Carte, Apple Pay & Google Pay via Stripe. Débité seulement si le son est accepté.' },
             { icon: Wallet, title: 'Sans compte', desc: 'Le public participe sans inscription. Rapide et sans friction.' },
             { icon: Radio, title: 'Temps réel', desc: 'File d\'attente et statuts mis à jour en direct sur tous les écrans.' },
           ].map((f, i) => (

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
-import { refundPayPalCapture } from '@/lib/paypal'
+import { capturePayment, cancelPayment } from '@/lib/stripe'
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const body = await req.json()
@@ -17,7 +17,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
 
-  // Le client confirme son paiement (pending_payment → paid)
+  // Le client confirme son paiement gratuit (pending_payment → paid).
+  // Pour les paiements Stripe, c'est /api/stripe/confirm qui valide l'autorisation.
   if (status === 'paid') {
     const { data, error } = await admin
       .from('requests')
@@ -36,7 +37,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Récupère la demande avec capture PayPal
   const { data: request, error: fetchErr } = await admin
     .from('requests')
     .select('*, sessions!inner(dj_id)')
@@ -46,15 +46,23 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (fetchErr || !request) return NextResponse.json({ error: 'Demande introuvable' }, { status: 404 })
   if ((request as any).sessions.dj_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  // Remboursement automatique si le DJ refuse
-  let refunded = false
-  if (status === 'rejected' && request.paypal_capture_id) {
+  let captured = false
+  let refunded = false // ici = autorisation annulée (aucun débit, aucun frais)
+
+  if (request.stripe_payment_intent_id && request.amount > 0) {
     try {
-      await refundPayPalCapture(request.paypal_capture_id, request.amount)
-      refunded = true
+      if (status === 'approved' || status === 'played') {
+        // Le DJ accepte → on encaisse réellement l'autorisation
+        await capturePayment(request.stripe_payment_intent_id)
+        captured = true
+      } else if (status === 'rejected') {
+        // Le DJ refuse → on annule l'autorisation (0 € de frais, client jamais débité)
+        await cancelPayment(request.stripe_payment_intent_id)
+        refunded = true
+      }
     } catch (err) {
-      console.error('PayPal refund error:', err)
-      // On continue quand même — marque refusée sans remboursement
+      console.error('Stripe capture/cancel error:', err)
+      // On continue : le statut est mis à jour quand même
     }
   }
 
@@ -66,5 +74,5 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     .single()
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
-  return NextResponse.json({ ...updated, refunded })
+  return NextResponse.json({ ...updated, captured, refunded })
 }

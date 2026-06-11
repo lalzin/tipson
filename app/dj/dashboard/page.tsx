@@ -163,18 +163,6 @@ export default function DJDashboard() {
       </div>
 
       <div className="max-w-[1400px] mx-auto px-6 lg:px-10 py-8 lg:py-10 space-y-8">
-        {/* Warning PayPal */}
-        {!profile?.paypal_me_url && (
-          <button onClick={() => router.push('/dj/settings')}
-            className="w-full bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4 flex items-center gap-3 hover:bg-yellow-500/15 transition text-left">
-            <span className="text-2xl">⚠️</span>
-            <div>
-              <p className="text-yellow-300 font-semibold text-sm">Configurez votre lien PayPal</p>
-              <p className="text-yellow-500/70 text-xs mt-0.5">Sans ça, les clients ne peuvent pas payer → Régler maintenant</p>
-            </div>
-          </button>
-        )}
-
         {/* Stats + CTA — layout desktop côte à côte */}
         <div className="lg:flex lg:items-stretch lg:gap-6">
           {/* Stats */}

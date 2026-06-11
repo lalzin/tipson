@@ -105,3 +105,6 @@ alter table profiles add column if not exists is_admin boolean not null default 
 -- Désigner le premier admin (remplacer l'email) :
 -- update profiles set is_admin = true, is_dj = true
 -- where id = (select id from auth.users where email = 'votre@email.com');
+
+-- ── Migration Stripe (remplace PayPal) ──────────────────────────────────────────
+alter table requests add column if not exists stripe_payment_intent_id text;
