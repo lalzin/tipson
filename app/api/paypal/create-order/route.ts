@@ -22,6 +22,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Demande introuvable' }, { status: 404 })
   }
 
+  // NOTE paiements : actuellement tout va sur le compte PayPal central de l'app.
+  // TODO (voir TODO.md) : destination configurable par DJ + portefeuille central
+  // avec commission et minimum de retrait + passage en autorisation/capture/void.
   const order = await createPayPalOrder(
     request.amount,
     `TIPSON — ${request.song_name} par ${request.artist}`
