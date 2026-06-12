@@ -1,8 +1,8 @@
 import Stripe from 'stripe'
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia',
-})
+// La version d'API n'est pas épinglée : le SDK utilise automatiquement la
+// version courante (2026-05-27.dahlia avec ce SDK).
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 // Commission de la plateforme prélevée sur chaque pourboire (en %).
 // Configurable sans redéploiement via la variable d'environnement.
@@ -84,7 +84,8 @@ export async function createExpressLoginLink(accountId: string) {
 
 /** Solde disponible et en attente sur un compte connecté. */
 export async function getAccountBalance(accountId: string) {
-  return stripe.balance.retrieve({ stripeAccount: accountId })
+  // Le 2e argument (request options) cible le compte connecté
+  return stripe.balance.retrieve({}, { stripeAccount: accountId })
 }
 
 /** Encaisse réellement une autorisation (le DJ a accepté). */
