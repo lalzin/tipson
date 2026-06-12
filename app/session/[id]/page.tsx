@@ -43,29 +43,48 @@ export default function SessionPage() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    const supabase = createClient()
+    let channel: ReturnType<typeof supabase.channel> | null = null
+    let poll: ReturnType<typeof setInterval> | null = null
+
+    const fetchSession = () =>
+      fetch(`/api/sessions/public/${id}`, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data) setSession(prev => prev ? { ...prev, ...data } : data) })
+        .catch(() => {})
+
+    // Démarre temps réel + filet de sécurité (poll lent) — uniquement onglet visible
+    function start() {
+      if (channel) return
+      channel = supabase
+        .channel(`session-public-${id}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${id}` },
+          payload => setSession(prev => prev ? { ...prev, ...(payload.new as typeof prev) } : prev)
+        )
+        .subscribe()
+      // Filet de sécurité espacé (30s) si le realtime n'est pas activé côté Supabase
+      poll = setInterval(fetchSession, 30000)
+    }
+    function stop() {
+      if (channel) { supabase.removeChannel(channel); channel = null }
+      if (poll) { clearInterval(poll); poll = null }
+    }
+
+    // Chargement initial
     fetch(`/api/sessions/public/${id}`, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(setSession)
       .finally(() => setPageLoading(false))
 
-    // Realtime : mise à jour des prix et du statut en direct
-    const supabase = createClient()
-    const channel = supabase
-      .channel(`session-public-${id}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${id}` },
-        payload => setSession(prev => prev ? { ...prev, ...(payload.new as typeof prev) } : prev)
-      )
-      .subscribe()
+    // Coupe tout quand l'onglet passe en arrière-plan, reprend au retour
+    function onVisibility() {
+      if (document.hidden) stop()
+      else { start(); fetchSession() }
+    }
+    if (!document.hidden) start()
+    document.addEventListener('visibilitychange', onVisibility)
 
-    // Fallback polling (si le realtime n'est pas activé sur la table sessions)
-    const poll = setInterval(() => {
-      fetch(`/api/sessions/public/${id}`, { cache: 'no-store' })
-        .then(r => r.ok ? r.json() : null)
-        .then(data => { if (data) setSession(prev => prev ? { ...prev, ...data } : data) })
-        .catch(() => {})
-    }, 10000)
-
-    return () => { supabase.removeChannel(channel); clearInterval(poll) }
+    return () => { document.removeEventListener('visibilitychange', onVisibility); stop() }
   }, [id])
 
   // Auth state + restore tracking depuis localStorage
@@ -103,19 +122,27 @@ export default function SessionPage() {
     return () => subscription.unsubscribe()
   }, [id])
 
-  // Realtime: suivi de la demande client
+  // Realtime: suivi de la demande client (coupé si onglet en arrière-plan)
   useEffect(() => {
     if (!request) return
     const supabase = createClient()
-    const channel = supabase
-      .channel(`request-${request.id}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'requests', filter: `id=eq.${request.id}` },
-        payload => setRequest(prev => prev ? { ...prev, ...(payload.new as Request) } : prev)
-      )
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
+    let channel: ReturnType<typeof supabase.channel> | null = null
+
+    function start() {
+      if (channel) return
+      channel = supabase
+        .channel(`request-${request!.id}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `id=eq.${request!.id}` },
+          payload => setRequest(prev => prev ? { ...prev, ...(payload.new as Request) } : prev)
+        )
+        .subscribe()
+    }
+    function stop() { if (channel) { supabase.removeChannel(channel); channel = null } }
+
+    function onVisibility() { if (document.hidden) stop(); else start() }
+    if (!document.hidden) start()
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => { document.removeEventListener('visibilitychange', onVisibility); stop() }
   }, [request?.id])
 
   const searchTracks = useCallback(async (q: string) => {

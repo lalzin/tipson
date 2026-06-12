@@ -54,23 +54,13 @@ export default function KaraokeView({ session, user, guestMode, sessionId }: Pro
     }
   }, [sessionId])
 
-  // Realtime: suivi de la demande
-  useEffect(() => {
-    if (!request) return
-    const supabase = createClient()
-    const channel = supabase
-      .channel(`karaoke-req-${request.id}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `id=eq.${request.id}` },
-        payload => setRequest(prev => prev ? { ...prev, ...(payload.new as Request) } : prev)
-      )
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [request?.id])
-
-  // Realtime: mise à jour de la position dans la file
+  // Realtime: suivi de la demande + position dans la file.
+  // Connexions coupées quand l'onglet est en arrière-plan (économie de data).
   useEffect(() => {
     if (!request || !session.id) return
     const supabase = createClient()
+    let reqChannel: ReturnType<typeof supabase.channel> | null = null
+    let queueChannel: ReturnType<typeof supabase.channel> | null = null
 
     function computeAhead(requests: Request[]) {
       const waiting = requests.filter(r =>
@@ -79,23 +69,43 @@ export default function KaraokeView({ session, user, guestMode, sessionId }: Pro
       setQueueAhead(waiting.length)
     }
 
-    // Charge la file initiale
-    supabase.from('requests')
-      .select('id, status, queue_position')
-      .eq('session_id', session.id)
-      .in('status', ['paid', 'approved'])
-      .then(({ data }) => { if (data) computeAhead(data as any) })
+    async function loadQueue() {
+      const { data } = await supabase.from('requests')
+        .select('id, status, queue_position')
+        .eq('session_id', session.id)
+        .in('status', ['paid', 'approved'])
+      if (data) computeAhead(data as any)
+    }
 
-    const channel = supabase
-      .channel(`karaoke-queue-${session.id}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `session_id=eq.${session.id}` },
-        async () => {
-          const { data } = await supabase.from('requests').select('id, status, queue_position').eq('session_id', session.id).in('status', ['paid', 'approved'])
-          if (data) computeAhead(data as any)
-        }
-      )
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
+    function start() {
+      if (reqChannel) return
+      reqChannel = supabase
+        .channel(`karaoke-req-${request!.id}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `id=eq.${request!.id}` },
+          payload => setRequest(prev => prev ? { ...prev, ...(payload.new as Request) } : prev)
+        )
+        .subscribe()
+      queueChannel = supabase
+        .channel(`karaoke-queue-${session.id}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `session_id=eq.${session.id}` },
+          () => loadQueue()
+        )
+        .subscribe()
+      loadQueue()
+    }
+    function stop() {
+      if (reqChannel) { supabase.removeChannel(reqChannel); reqChannel = null }
+      if (queueChannel) { supabase.removeChannel(queueChannel); queueChannel = null }
+    }
+
+    function onVisibility() {
+      if (document.hidden) stop()
+      else start()
+    }
+    if (!document.hidden) start()
+    document.addEventListener('visibilitychange', onVisibility)
+
+    return () => { document.removeEventListener('visibilitychange', onVisibility); stop() }
   }, [request?.id, request?.queue_position, session.id])
 
   const searchTracks = useCallback(async (q: string) => {
