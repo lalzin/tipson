@@ -48,18 +48,30 @@ export default function DJSettingsPage() {
 
   async function startOnboarding() {
     setAction(true)
-    const res = await fetch('/api/stripe/connect/onboard', { method: 'POST' })
-    const data = await res.json()
-    if (data.url) { window.location.href = data.url }
-    else { alert(data.error || 'Erreur'); setAction(false) }
+    try {
+      const res = await fetch('/api/stripe/connect/onboard', { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.url) { window.location.href = data.url; return }
+      alert(data.error || `Erreur (${res.status}). Réessayez.`)
+    } catch {
+      alert('Erreur réseau. Réessayez.')
+    } finally {
+      setAction(false)
+    }
   }
 
   async function openDashboard() {
     setAction(true)
-    const res = await fetch('/api/stripe/connect/dashboard', { method: 'POST' })
-    const data = await res.json()
-    if (data.url) { window.location.href = data.url }
-    else { alert(data.error || 'Erreur'); setAction(false) }
+    try {
+      const res = await fetch('/api/stripe/connect/dashboard', { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.url) { window.location.href = data.url; return }
+      alert(data.error || `Erreur (${res.status}). Réessayez.`)
+    } catch {
+      alert('Erreur réseau. Réessayez.')
+    } finally {
+      setAction(false)
+    }
   }
 
   if (loading) {

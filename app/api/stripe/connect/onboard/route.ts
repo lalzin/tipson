@@ -17,21 +17,31 @@ export async function POST(req: NextRequest) {
   const admin = createServiceSupabaseClient()
   let accountId = auth.profile.stripe_account_id
 
-  if (!accountId) {
-    // Email pour pré-remplir l'onboarding
-    const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    const account = await createExpressAccount(user?.email ?? undefined)
-    accountId = account.id
-    await admin.from('profiles').update({ stripe_account_id: accountId }).eq('id', auth.userId)
+  try {
+    if (!accountId) {
+      // Email pour pré-remplir l'onboarding
+      const supabase = await createServerSupabaseClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      const account = await createExpressAccount(user?.email ?? undefined)
+      accountId = account.id
+      await admin.from('profiles').update({ stripe_account_id: accountId }).eq('id', auth.userId)
+    }
+
+    const origin = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin
+    const link = await createOnboardingLink(
+      accountId,
+      `${origin}/dj/settings?onboarding=refresh`,
+      `${origin}/dj/settings?onboarding=done`,
+    )
+
+    return NextResponse.json({ url: link.url })
+  } catch (err: any) {
+    console.error('Stripe Connect onboard error:', err?.message || err)
+    // Message explicite : le plus souvent Connect n'est pas activé sur le compte
+    const msg = err?.raw?.message || err?.message || 'Erreur Stripe'
+    return NextResponse.json(
+      { error: `Stripe : ${msg}. Vérifiez que Stripe Connect est activé sur votre compte.` },
+      { status: 400 }
+    )
   }
-
-  const origin = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin
-  const link = await createOnboardingLink(
-    accountId,
-    `${origin}/dj/settings?onboarding=refresh`,
-    `${origin}/dj/settings?onboarding=done`,
-  )
-
-  return NextResponse.json({ url: link.url })
 }
