@@ -13,7 +13,7 @@ function JoinForm() {
 
   // Détecte si un client est connecté (pour afficher l'accès au compte)
   useEffect(() => {
-    createClient().auth.getUser().then(({ data: { user } }) => setIsAuthed(!!user))
+    createClient().auth.getSession().then(({ data: { session } }) => setIsAuthed(!!session?.user))
   }, [])
 
   // Auto-remplissage depuis le lien QR (?code=XXXXXX)

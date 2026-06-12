@@ -90,7 +90,9 @@ export default function SessionPage() {
   // Auth state + restore tracking depuis localStorage
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    // getSession() = lecture locale (aucune requête réseau au serveur Auth)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user ?? null
       setUser(user)
       if (user) {
         const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || ''

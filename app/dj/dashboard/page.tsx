@@ -28,8 +28,8 @@ export default function DJDashboard() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { router.push('/dj'); return }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) { router.push('/dj'); return }
     })
 
     Promise.all([

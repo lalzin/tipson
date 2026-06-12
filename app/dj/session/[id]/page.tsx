@@ -37,8 +37,8 @@ export default function DJSessionPage() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) router.push('/dj')
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) router.push('/dj')
     })
 
     async function load() {

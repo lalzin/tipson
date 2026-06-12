@@ -39,7 +39,8 @@ export default function AccountPage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { session } } = await supabase.auth.getSession()
+      const user = session?.user ?? null
       if (!user) { router.push('/join'); return }
       setUser(user)
       const res = await fetch('/api/account/stats', { cache: 'no-store' })
