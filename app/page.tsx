@@ -155,7 +155,8 @@ export default function LandingPage() {
             </div>
             <span className="font-bold text-gray-400">TIPSON</span>
           </div>
-          <nav className="flex items-center gap-4">
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            <Link href="/cgv" className="hover:text-gray-300 transition">CGU / CGV</Link>
             <Link href="/confidentialite" className="hover:text-gray-300 transition">Confidentialité</Link>
             <Link href="/mentions-legales" className="hover:text-gray-300 transition">Mentions légales</Link>
           </nav>

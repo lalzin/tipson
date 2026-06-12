@@ -35,6 +35,9 @@ export default function KaraokeView({ session, user, guestMode, sessionId }: Pro
   const [submitting, setSubmitting] = useState(false)
   const [request, setRequest] = useState<Request | null>(null)
   const [queueAhead, setQueueAhead] = useState<number>(0)
+  const [showCancel, setShowCancel] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelled, setCancelled] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Restaure depuis localStorage
@@ -165,7 +168,26 @@ export default function KaraokeView({ session, user, guestMode, sessionId }: Pro
   function resetFlow() {
     localStorage.removeItem(`tipson-karaoke-${sessionId}`)
     setStep('search'); setSelectedTrack(null); setIsPriority(false); setQuery(''); setTracks([]); setMessage(''); setRequest(null)
+    setCancelled(false)
     setTimeout(() => inputRef.current?.focus(), 100)
+  }
+
+  async function cancelRequest() {
+    if (!request) return
+    if (!confirm('Annuler définitivement votre passage ? Votre paiement sera annulé et vous quitterez la file.')) return
+    setCancelling(true)
+    try {
+      const res = await fetch(`/api/requests/${request.id}/cancel`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      localStorage.removeItem(`tipson-karaoke-${sessionId}`)
+      setShowCancel(false)
+      setCancelled(true)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Annulation impossible.')
+    } finally {
+      setCancelling(false)
+    }
   }
 
   const currentPrice = isPriority ? session.price_karaoke_priority : session.price_karaoke
@@ -222,6 +244,29 @@ export default function KaraokeView({ session, user, guestMode, sessionId }: Pro
           <div className="glass rounded-2xl p-4 border border-white/5">
             <p className="text-gray-500 text-sm">{session.name}</p>
           </div>
+        </div>
+      </main>
+    )
+  }
+
+  // ── CONFIRMATION D'ANNULATION ────────────────────────────────────────
+  if (step === 'queue' && cancelled) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center px-6 py-12 bg-gray-950 text-center">
+        <div className="w-full max-w-md space-y-5">
+          <div className="w-20 h-20 rounded-3xl bg-gray-800/60 border border-white/10 flex items-center justify-center mx-auto">
+            <span className="text-4xl">✓</span>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">Passage annulé</h2>
+            <p className="text-gray-400 text-sm mt-2">
+              Vous avez quitté la file. Aucun montant ne sera prélevé.
+            </p>
+          </div>
+          <button onClick={resetFlow}
+            className="w-full py-3 rounded-2xl bg-pink-600/20 border border-pink-500/30 text-pink-300 hover:bg-pink-600/30 font-medium transition">
+            Rejoindre à nouveau
+          </button>
         </div>
       </main>
     )
@@ -314,6 +359,34 @@ export default function KaraokeView({ session, user, guestMode, sessionId }: Pro
               className="w-full py-3 rounded-2xl bg-pink-600/20 border border-pink-500/30 text-pink-300 hover:bg-pink-600/30 font-medium transition">
               Rejoindre à nouveau la file
             </button>
+          )}
+
+          {/* Annulation (rétractation) — discret, en deux temps, seulement en attente */}
+          {request.status === 'paid' && (
+            <div className="pt-1">
+              {!showCancel ? (
+                <button onClick={() => setShowCancel(true)}
+                  className="text-gray-700 hover:text-gray-500 text-xs underline underline-offset-2 transition">
+                  Un imprévu ?
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-gray-500 text-xs max-w-xs mx-auto">
+                    Vous pouvez quitter la file tant que vous n&apos;avez pas été appelé. Votre paiement sera annulé.
+                  </p>
+                  <div className="flex items-center justify-center gap-3">
+                    <button onClick={() => setShowCancel(false)} className="text-gray-500 hover:text-gray-300 text-xs transition">
+                      Rester
+                    </button>
+                    <button onClick={cancelRequest} disabled={cancelling}
+                      className="text-red-400/80 hover:text-red-400 text-xs font-medium flex items-center gap-1.5 disabled:opacity-50 transition">
+                      {cancelling && <Loader2 className="w-3 h-3 animate-spin" />}
+                      Quitter la file
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </main>

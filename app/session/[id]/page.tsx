@@ -40,7 +40,28 @@ export default function SessionPage() {
   const [submitting, setSubmitting] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [request, setRequest] = useState<Request | null>(null)
+  const [showCancel, setShowCancel] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelled, setCancelled] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  async function cancelRequest() {
+    if (!request) return
+    if (!confirm('Annuler définitivement votre demande ? Votre paiement sera annulé et le DJ ne la verra plus.')) return
+    setCancelling(true)
+    try {
+      const res = await fetch(`/api/requests/${request.id}/cancel`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      localStorage.removeItem(`tipson-req-${id}`)
+      setShowCancel(false)
+      setCancelled(true)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Annulation impossible.')
+    } finally {
+      setCancelling(false)
+    }
+  }
 
   useEffect(() => {
     const supabase = createClient()
@@ -341,6 +362,31 @@ export default function SessionPage() {
   const amountEur = formatPrice(amount)
 
   // ─── TRACKING ─────────────────────────────────────────────────────
+  // Écran de confirmation après annulation par le client
+  if (step === 'tracking' && cancelled) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center px-6 py-12 bg-gray-950 text-center">
+        <div className="w-full max-w-md space-y-5">
+          <div className="w-20 h-20 rounded-3xl bg-gray-800/60 border border-white/10 flex items-center justify-center mx-auto">
+            <span className="text-4xl">✓</span>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">Demande annulée</h2>
+            <p className="text-gray-400 text-sm mt-2">
+              Votre demande a bien été annulée. Aucun montant ne sera prélevé.
+            </p>
+          </div>
+          <button
+            onClick={() => { setCancelled(false); resetFlow() }}
+            className="w-full py-3 rounded-2xl bg-purple-600/20 border border-purple-500/30 text-purple-300 hover:bg-purple-600/30 font-medium transition"
+          >
+            Faire une autre demande
+          </button>
+        </div>
+      </main>
+    )
+  }
+
   if (step === 'tracking' && request) {
     const statusConfig = {
       paid: {
@@ -423,6 +469,40 @@ export default function SessionPage() {
             <div className="flex items-center gap-2 text-gray-500 text-xs">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
               Mise à jour en temps réel
+            </div>
+          )}
+
+          {/* Annulation (rétractation) — volontairement discret, en deux temps */}
+          {request.status === 'paid' && (
+            <div className="pt-2">
+              {!showCancel ? (
+                <button
+                  onClick={() => setShowCancel(true)}
+                  className="text-gray-700 hover:text-gray-500 text-xs underline underline-offset-2 transition"
+                >
+                  Un problème avec votre demande ?
+                </button>
+              ) : (
+                <div className="space-y-2 text-center">
+                  <p className="text-gray-500 text-xs max-w-xs mx-auto">
+                    Vous pouvez annuler votre demande tant que le DJ ne l&apos;a pas validée.
+                    Votre paiement sera annulé.
+                  </p>
+                  <div className="flex items-center justify-center gap-3">
+                    <button onClick={() => setShowCancel(false)} className="text-gray-500 hover:text-gray-300 text-xs transition">
+                      Garder
+                    </button>
+                    <button
+                      onClick={cancelRequest}
+                      disabled={cancelling}
+                      className="text-red-400/80 hover:text-red-400 text-xs font-medium flex items-center gap-1.5 disabled:opacity-50 transition"
+                    >
+                      {cancelling && <Loader2 className="w-3 h-3 animate-spin" />}
+                      Annuler ma demande
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
