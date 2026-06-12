@@ -155,7 +155,11 @@ export default function LandingPage() {
             </div>
             <span className="font-bold text-gray-400">TIPSON</span>
           </div>
-          <p>© {new Date().getFullYear()} TIPSON. La soirée dirigée par le public.</p>
+          <nav className="flex items-center gap-4">
+            <Link href="/confidentialite" className="hover:text-gray-300 transition">Confidentialité</Link>
+            <Link href="/mentions-legales" className="hover:text-gray-300 transition">Mentions légales</Link>
+          </nav>
+          <p className="text-gray-600">© {new Date().getFullYear()} TIPSON</p>
         </div>
       </footer>
     </main>
