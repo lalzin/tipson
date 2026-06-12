@@ -74,6 +74,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (body.price_priority !== undefined) updates.price_priority = body.price_priority
   if (body.price_karaoke !== undefined) updates.price_karaoke = body.price_karaoke
   if (body.price_karaoke_priority !== undefined) updates.price_karaoke_priority = body.price_karaoke_priority
+  if (body.express_enabled !== undefined) updates.express_enabled = !!body.express_enabled
   if (body.name !== undefined) updates.name = body.name
 
   // Update via service client → bypasse les subtilités RLS (RETURNING filtré quand status != active)

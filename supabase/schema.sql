@@ -113,3 +113,6 @@ alter table requests add column if not exists stripe_payment_intent_id text;
 alter table profiles add column if not exists stripe_account_id text;
 alter table profiles add column if not exists charges_enabled boolean not null default false;
 alter table profiles add column if not exists payouts_enabled boolean not null default false;
+
+-- ── Mode express activable/désactivable par session ─────────────────────────────
+alter table sessions add column if not exists express_enabled boolean not null default true;

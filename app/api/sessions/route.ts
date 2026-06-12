@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   const user = { id: auth.userId }
 
   const body = await req.json()
-  const { name, venue, session_type = 'dj', price_normal = 100, price_priority = 500, price_karaoke = 0, price_karaoke_priority = 0 } = body
+  const { name, venue, session_type = 'dj', price_normal = 100, price_priority = 500, price_karaoke = 0, price_karaoke_priority = 0, express_enabled = true } = body
 
   if (!name || String(name).length > 120) return NextResponse.json({ error: 'name invalide' }, { status: 400 })
 
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('sessions')
-    .insert({ dj_id: user.id, name, code, venue, session_type, price_normal, price_priority, price_karaoke, price_karaoke_priority })
+    .insert({ dj_id: user.id, name, code, venue, session_type, price_normal, price_priority, price_karaoke, price_karaoke_priority, express_enabled: !!express_enabled })
     .select()
     .single()
 

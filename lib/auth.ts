@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase-server'
 import type { Profile } from '@/types'
 
@@ -24,4 +25,15 @@ export async function getAuthContext(): Promise<AuthContext | null> {
 
   if (!profile) return null
   return { userId: user.id, profile: profile as Profile }
+}
+
+/**
+ * Garde admin pour les routes API. Usage :
+ *   const guard = await requireAdmin(); if ('error' in guard) return guard.error
+ */
+export async function requireAdmin(): Promise<{ error: NextResponse } | { auth: AuthContext }> {
+  const auth = await getAuthContext()
+  if (!auth) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+  if (!auth.profile.is_admin) return { error: NextResponse.json({ error: 'Accès réservé aux administrateurs' }, { status: 403 }) }
+  return { auth }
 }

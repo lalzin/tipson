@@ -13,7 +13,8 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/dj/dashboard') ||
     path.startsWith('/dj/session') ||
     path.startsWith('/dj/settings') ||
-    path.startsWith('/admin')
+    path.startsWith('/admin') ||
+    path.startsWith('/connect-demo')
 
   if (isDjProtected && !user) {
     return NextResponse.redirect(new URL('/dj', request.url))
@@ -36,5 +37,7 @@ export const config = {
     '/admin',
     '/admin/:path*',
     '/account',
+    '/connect-demo',
+    '/connect-demo/:path*',
   ],
 }

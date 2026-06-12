@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripeClient, applicationFeeAmount } from '@/lib/stripe-client'
+import { requireAdmin } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +12,7 @@ export const dynamic = 'force-dynamic'
  * La plateforme est responsable de la tarification et de la collecte des frais.
  */
 export async function POST(req: NextRequest) {
+  const guard = await requireAdmin(); if ('error' in guard) return guard.error
   try {
     const { productId } = await req.json()
     if (!productId) {

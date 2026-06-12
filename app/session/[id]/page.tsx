@@ -696,7 +696,8 @@ export default function SessionPage() {
               </div>
             </button>
 
-            {/* Option priorité — 5€ */}
+            {/* Option priorité — masquée si l'express est désactivé */}
+            {session.express_enabled !== false && (
             <button
               onClick={() => { setRequestType('priority'); setStep('form') }}
               className="w-full rounded-2xl p-5 text-left transition active:scale-[0.98] group relative overflow-hidden border border-purple-500/30 hover:border-purple-400/50"
@@ -721,6 +722,7 @@ export default function SessionPage() {
                 </div>
               </div>
             </button>
+            )}
           </div>
 
           <p className="text-center text-gray-600 text-xs">
@@ -805,7 +807,12 @@ export default function SessionPage() {
             {tracks.map(track => (
               <button
                 key={track.id}
-                onClick={() => { setSelectedTrack(track); setStep('select-option') }}
+                onClick={() => {
+                  setSelectedTrack(track)
+                  // Si l'option express est désactivée, pas de choix → demande normale directe
+                  if (session.express_enabled === false) { setRequestType('normal'); setStep('form') }
+                  else setStep('select-option')
+                }}
                 className="w-full glass rounded-2xl p-3 flex gap-3 items-center hover:bg-white/8 active:scale-[0.98] transition text-left group"
               >
                 {track.image && (

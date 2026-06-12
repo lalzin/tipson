@@ -17,6 +17,7 @@ export default function NewSessionModal({ onClose, onCreate }: Props) {
   const [pricePriority, setPricePriority] = useState('5')
   const [priceKaraoke, setPriceKaraoke] = useState('0')
   const [priceKaraokePriority, setPriceKaraokePriority] = useState('0')
+  const [expressEnabled, setExpressEnabled] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -46,6 +47,8 @@ export default function NewSessionModal({ onClose, onCreate }: Props) {
       if (pKaraokePriority > 0 && pKaraokePriority <= pKaraoke) { setError('Le prix "Passer devant" doit être supérieur au prix normal'); setLoading(false); return }
       body = { ...body, price_karaoke: pKaraoke, price_karaoke_priority: pKaraokePriority }
     }
+
+    body = { ...body, express_enabled: expressEnabled }
 
     const res = await fetch('/api/sessions', {
       method: 'POST',
@@ -213,6 +216,26 @@ export default function NewSessionModal({ onClose, onCreate }: Props) {
               <p className="text-gray-600 text-xs pl-1">0€ = gratuit · &quot;Passer devant&quot; place le candidat en tête de file</p>
             </div>
           )}
+
+          {/* Mode express (option prioritaire payante) */}
+          <button
+            type="button"
+            onClick={() => setExpressEnabled(v => !v)}
+            className="w-full flex items-center justify-between gap-3 rounded-2xl bg-white/3 border border-white/10 p-3.5 text-left hover:bg-white/5 transition"
+          >
+            <div className="flex items-center gap-2.5">
+              <Zap className={cn('w-4 h-4', expressEnabled ? 'text-yellow-400' : 'text-gray-600')} />
+              <div>
+                <p className="text-sm font-medium">Option express (passer devant)</p>
+                <p className="text-gray-500 text-xs mt-0.5">
+                  {sessionType === 'karaoke' ? 'Payer pour passer en tête de file' : 'Payer pour être joué en priorité'}
+                </p>
+              </div>
+            </div>
+            <div className={cn('w-11 h-6 rounded-full p-0.5 transition flex-shrink-0', expressEnabled ? 'bg-yellow-500' : 'bg-white/10')}>
+              <div className={cn('w-5 h-5 rounded-full bg-white transition-transform', expressEnabled ? 'translate-x-5' : 'translate-x-0')} />
+            </div>
+          </button>
 
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripeClient } from '@/lib/stripe-client'
+import { requireAdmin } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,7 @@ export const dynamic = 'force-dynamic'
  * `requirements` (pour savoir s'il reste des informations à fournir).
  */
 export async function GET(req: NextRequest) {
+  const guard = await requireAdmin(); if ('error' in guard) return guard.error
   try {
     const accountId = req.nextUrl.searchParams.get('accountId')
     if (!accountId) {

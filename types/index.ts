@@ -27,6 +27,7 @@ export interface Session {
   price_priority: number
   price_karaoke: number
   price_karaoke_priority: number
+  express_enabled: boolean
   venue: string | null
   created_at: string
   ended_at: string | null

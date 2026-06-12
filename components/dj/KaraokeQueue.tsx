@@ -1,5 +1,5 @@
 'use client'
-import { Mic2, Play, X, CheckCircle2, Music2, Clock, Users, Loader2 } from 'lucide-react'
+import { Mic2, Play, X, CheckCircle2, Music2, Clock, Users, Loader2, ArrowUp } from 'lucide-react'
 import type { Request } from '@/types'
 import { cn, formatPrice } from '@/lib/utils'
 
@@ -8,9 +8,10 @@ interface Props {
   onCall: (id: string) => void
   onDone: (id: string) => void
   onSkip: (id: string) => void
+  onPrioritize?: (id: string) => void
 }
 
-export default function KaraokeQueue({ requests, onCall, onDone, onSkip }: Props) {
+export default function KaraokeQueue({ requests, onCall, onDone, onSkip, onPrioritize }: Props) {
   const waiting = requests.filter(r => r.status === 'paid').sort((a, b) => (a.queue_position ?? 0) - (b.queue_position ?? 0))
   const singing = requests.filter(r => r.status === 'approved')
   const done = requests.filter(r => r.status === 'played')
@@ -111,9 +112,17 @@ export default function KaraokeQueue({ requests, onCall, onDone, onSkip }: Props
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-gray-600 text-xs">
-                <Clock className="w-3.5 h-3.5" />
-                <span>Position #{index + 1} · En attente</span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-gray-600 text-xs">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Position #{index + 1} · En attente</span>
+                </div>
+                {onPrioritize && (
+                  <button onClick={() => onPrioritize(req.id)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg glass text-yellow-400/80 hover:text-yellow-300 hover:bg-yellow-500/10 text-xs font-medium transition">
+                    <ArrowUp className="w-3.5 h-3.5" /> Prioriser
+                  </button>
+                )}
               </div>
             )}
           </div>

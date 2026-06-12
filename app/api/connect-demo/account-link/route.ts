@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripeClient } from '@/lib/stripe-client'
+import { requireAdmin } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,7 @@ export const dynamic = 'force-dynamic'
  * à la configuration demandée à la création du compte.
  */
 export async function POST(req: NextRequest) {
+  const guard = await requireAdmin(); if ('error' in guard) return guard.error
   try {
     const { accountId } = await req.json()
     if (!accountId) {

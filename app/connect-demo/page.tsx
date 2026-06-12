@@ -19,6 +19,7 @@ const eur = (cents: number | null) =>
 
 function ConnectDemo() {
   const params = useSearchParams()
+  const [allowed, setAllowed] = useState<boolean | null>(null)
   const [accountId, setAccountId] = useState<string | null>(null)
   const [status, setStatus] = useState<Status | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
@@ -34,6 +35,14 @@ function ConnectDemo() {
   const [pPrice, setPPrice] = useState('')
 
   const [products, setProducts] = useState<Product[]>([])
+
+  // Réservé aux administrateurs
+  useEffect(() => {
+    fetch('/api/profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(p => setAllowed(!!p?.is_admin))
+      .catch(() => setAllowed(false))
+  }, [])
 
   // Récupère l'accountId (retour d'onboarding via ?accountId, sinon localStorage)
   useEffect(() => {
@@ -118,6 +127,19 @@ function ConnectDemo() {
       if (!res.ok) throw new Error(data.error)
       window.location.href = data.url
     } catch (e: any) { setError(e.message); setBusy(null) }
+  }
+
+  if (allowed === null) {
+    return <div className="min-h-screen bg-gray-950 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-purple-400" /></div>
+  }
+  if (!allowed) {
+    return (
+      <main className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center px-6 text-center gap-4">
+        <AlertCircle className="w-10 h-10 text-red-400" />
+        <h1 className="text-xl font-bold">Accès réservé aux administrateurs</h1>
+        <a href="/" className="text-purple-400 underline underline-offset-4 text-sm">Retour à l&apos;accueil</a>
+      </main>
+    )
   }
 
   return (

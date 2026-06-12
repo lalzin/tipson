@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripeClient } from '@/lib/stripe-client'
+import { requireAdmin } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +21,7 @@ export const dynamic = 'force-dynamic'
  * client (qui le conserve en localStorage / dans l'URL de retour).
  */
 export async function POST(req: NextRequest) {
+  const guard = await requireAdmin(); if ('error' in guard) return guard.error
   try {
     const { display_name, contact_email } = await req.json()
 

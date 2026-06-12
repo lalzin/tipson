@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripeClient } from '@/lib/stripe-client'
+import { requireAdmin } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,6 +10,7 @@ export const dynamic = 'force-dynamic'
  * destinataire est stocké dans les métadonnées du produit.
  */
 export async function GET() {
+  const guard = await requireAdmin(); if ('error' in guard) return guard.error
   try {
     const products = await stripeClient.products.list({
       active: true,
@@ -42,6 +44,7 @@ export async function GET() {
  * On enregistre la correspondance produit → compte connecté dans les métadonnées.
  */
 export async function POST(req: NextRequest) {
+  const guard = await requireAdmin(); if ('error' in guard) return guard.error
   try {
     const { name, description, priceInCents, connectedAccountId, currency } = await req.json()
 

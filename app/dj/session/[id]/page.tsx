@@ -116,6 +116,17 @@ export default function DJSessionPage() {
     }
   }
 
+  async function prioritizeRequest(reqId: string) {
+    const res = await fetch(`/api/requests/${reqId}/prioritize`, { method: 'POST' })
+    if (res.ok) {
+      const updated = await res.json()
+      setRequests(prev => prev.map(r => r.id === reqId ? { ...r, queue_position: updated.queue_position } : r))
+    } else {
+      const d = await res.json().catch(() => ({}))
+      alert(d.error || 'Impossible de prioriser')
+    }
+  }
+
   async function openParticipants() {
     setShowParticipants(true)
     if (participants.length > 0) return
@@ -427,6 +438,7 @@ export default function DJSessionPage() {
                 onCall={id => updateRequest(id, 'approved')}
                 onDone={id => updateRequest(id, 'played')}
                 onSkip={id => updateRequest(id, 'rejected')}
+                onPrioritize={prioritizeRequest}
               />
             </div>
           ) : (

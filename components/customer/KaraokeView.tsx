@@ -191,7 +191,7 @@ export default function KaraokeView({ session, user, guestMode, sessionId }: Pro
   }
 
   const currentPrice = isPriority ? session.price_karaoke_priority : session.price_karaoke
-  const hasPriorityOption = (session.price_karaoke_priority ?? 0) > 0
+  const hasPriorityOption = session.express_enabled !== false && (session.price_karaoke_priority ?? 0) > 0
   const sessionEnded = session.status === 'ended'
   const sessionPaused = session.status === 'paused'
 
