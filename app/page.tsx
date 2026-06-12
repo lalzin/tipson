@@ -32,8 +32,8 @@ export default function LandingPage() {
           </h1>
 
           <p className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            TIPSON connecte le public au DJ et à l&apos;animateur karaoké.
-            Scannez, choisissez votre morceau, et faites vibrer la piste — en quelques secondes.
+            La plateforme qui relie le public au DJ et à l&apos;animateur karaoké.
+            Scannez, choisissez votre morceau et faites vibrer la piste en quelques secondes.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -61,7 +61,7 @@ export default function LandingPage() {
             <h3 className="text-2xl font-bold">Mode DJ</h3>
             <p className="text-gray-400 mt-2 leading-relaxed">
               Le public propose des morceaux et peut payer pour passer en priorité.
-              Le DJ valide, refuse ou joue — tout en temps réel.
+              Le DJ valide, refuse ou joue en temps réel.
             </p>
           </div>
           <div className="rounded-3xl p-8 border border-pink-500/20 bg-gradient-to-br from-pink-900/20 to-transparent">
@@ -86,7 +86,7 @@ export default function LandingPage() {
           {[
             { icon: QrCode, title: 'Scannez le QR', desc: 'Le code de la soirée vous ouvre la page instantanément.' },
             { icon: ListMusic, title: 'Choisissez un son', desc: 'Recherchez n\'importe quel titre et envoyez votre demande.' },
-            { icon: Zap, title: 'Faites-le passer', desc: 'Option prioritaire pour être joué — ou chanter — plus vite.' },
+            { icon: Zap, title: 'Faites-le passer', desc: 'Option prioritaire pour être joué ou chanter plus vite.' },
           ].map((s, i) => (
             <div key={i} className="glass rounded-3xl p-7 text-center">
               <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-5">
@@ -155,7 +155,7 @@ export default function LandingPage() {
             </div>
             <span className="font-bold text-gray-400">TIPSON</span>
           </div>
-          <p>© {new Date().getFullYear()} TIPSON — La soirée dirigée par le public.</p>
+          <p>© {new Date().getFullYear()} TIPSON. La soirée dirigée par le public.</p>
         </div>
       </footer>
     </main>
