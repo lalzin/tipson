@@ -161,7 +161,7 @@ export default function DisplayPage() {
       {/* Emojis flottants */}
       <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
         {floats.map(f => (
-          <span key={f.id} className="float-emoji-big text-8xl" style={{ left: `${f.left}%` }}>{f.emoji}</span>
+          <span key={f.id} className="float-emoji-big text-6xl" style={{ left: `${f.left}%` }}>{f.emoji}</span>
         ))}
       </div>
 

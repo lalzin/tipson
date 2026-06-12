@@ -161,9 +161,9 @@
 
 /* Pop d'emoji plus marqué */
 @keyframes floatUpBig {
-  0%   { transform: translateY(0) scale(0.4); opacity: 0; }
-  10%  { transform: translateY(-4vh) scale(1.8); opacity: 1; }
-  100% { transform: translateY(-88vh) scale(1.1); opacity: 0; }
+  0%   { transform: translateY(0) scale(0.5); opacity: 0; }
+  12%  { transform: translateY(-4vh) scale(1.15); opacity: 1; }
+  100% { transform: translateY(-86vh) scale(0.95); opacity: 0; }
 }
 .float-emoji-big {
   position: absolute; bottom: 6vh;
