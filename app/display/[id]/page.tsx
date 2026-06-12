@@ -24,7 +24,7 @@ export default function DisplayPage() {
     const emoji = EMOJI[type] ?? '❤️'
     const fid = counter.current++
     setFloats(f => [...f, { id: fid, emoji, left: 5 + Math.random() * 90 }])
-    setTimeout(() => setFloats(f => f.filter(x => x.id !== fid)), 2300)
+    setTimeout(() => setFloats(f => f.filter(x => x.id !== fid)), 2500)
   }, [])
 
   // Chargement de la session (les messages restent éphémères : pas d'historique)
@@ -56,6 +56,9 @@ export default function DisplayPage() {
             setTimeout(() => setValidFlash(null), 2200)
           }
         })
+      // Met à jour la config en direct (animation de fond, activation…)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${id}` },
+        ({ new: s }: any) => setSession(prev => prev ? { ...prev, ...s } : prev))
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [id, spawnEmoji, pushMessage])
@@ -78,7 +81,9 @@ export default function DisplayPage() {
   const tickerMsgs = messages.length ? messages : [{ id: 'x', text: 'Envoyez vos messages et vos ❤️ depuis votre téléphone', author_name: null } as any]
 
   return (
-    <main className={`relative h-screen w-screen overflow-hidden text-white ${bg === 'waves' ? 'bg-waves' : 'bg-gray-950'}`}>
+    <main className={`relative h-screen w-screen overflow-hidden text-white ${
+      bg === 'waves' ? 'bg-waves' : bg === 'neon' ? 'bg-neon' : bg === 'aurora' ? 'bg-aurora-base' : 'bg-gray-950'
+    }`}>
       {/* Fonds alternatifs */}
       {bg === 'pulse' && (
         <div className="absolute inset-0 pointer-events-none">
@@ -96,6 +101,13 @@ export default function DisplayPage() {
               animationDelay: `${i * 0.3}s`,
             }} />
           ))}
+        </div>
+      )}
+      {bg === 'aurora' && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="bg-aurora-veil" style={{ background: 'linear-gradient(90deg, transparent, #7c3aed, transparent)' }} />
+          <div className="bg-aurora-veil" style={{ background: 'linear-gradient(90deg, transparent, #db2777, transparent)', animationDelay: '1.3s' }} />
+          <div className="bg-aurora-veil" style={{ background: 'linear-gradient(90deg, transparent, #2563eb, transparent)', animationDelay: '2.1s' }} />
         </div>
       )}
       <div className="absolute inset-0 bg-black/20 pointer-events-none" />
@@ -149,7 +161,7 @@ export default function DisplayPage() {
       {/* Emojis flottants */}
       <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
         {floats.map(f => (
-          <span key={f.id} className="float-emoji text-6xl" style={{ left: `${f.left}%` }}>{f.emoji}</span>
+          <span key={f.id} className="float-emoji-big text-8xl" style={{ left: `${f.left}%` }}>{f.emoji}</span>
         ))}
       </div>
 

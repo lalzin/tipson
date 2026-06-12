@@ -453,6 +453,8 @@ export default function DJSessionPage() {
                     <option value="waves">Vagues</option>
                     <option value="pulse">Pulse</option>
                     <option value="particles">Particules</option>
+                    <option value="aurora">Aurore</option>
+                    <option value="neon">Néon</option>
                   </select>
                 </div>
               )}

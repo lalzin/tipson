@@ -43,6 +43,7 @@ export default function InteractionBar({ sessionId, displayEnabled, messagesEnab
     localStorage.setItem('tipson-pseudo', clean)
   }
   const authorName = pseudo.trim()
+  const [tapped, setTapped] = useState<string | null>(null)
 
   // Canal broadcast pour les emojis (éphémère, aucune écriture en base)
   useEffect(() => {
@@ -55,6 +56,7 @@ export default function InteractionBar({ sessionId, displayEnabled, messagesEnab
   }, [sessionId, displayEnabled])
 
   function sendEmoji(type: string) {
+    setTapped(type); setTimeout(() => setTapped(t => t === type ? null : t), 350)
     const now = Date.now()
     if (now - lastEmoji.current < 400) return // anti-spam : 1 / 400ms
     lastEmoji.current = now
@@ -80,6 +82,7 @@ export default function InteractionBar({ sessionId, displayEnabled, messagesEnab
   if (!displayEnabled && !messagesEnabled) return null
 
   return (
+    <>
     <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-gray-950/95 backdrop-blur px-5 py-3 space-y-2.5 shadow-2xl shadow-black/50 max-w-2xl mx-auto">
       {/* Emojis */}
       {displayEnabled && (
@@ -87,7 +90,7 @@ export default function InteractionBar({ sessionId, displayEnabled, messagesEnab
           {EMOJIS.map(e => (
             <button key={e.type} onClick={() => sendEmoji(e.type)}
               className="w-11 h-11 rounded-2xl bg-white/5 hover:bg-white/12 active:scale-90 text-2xl transition flex items-center justify-center">
-              {e.glyph}
+              <span className={tapped === e.type ? 'emoji-tap inline-block' : 'inline-block'}>{e.glyph}</span>
             </button>
           ))}
         </div>
@@ -126,22 +129,30 @@ export default function InteractionBar({ sessionId, displayEnabled, messagesEnab
         </button>
       )}
 
-      {showSuper && (
-        <div className="rounded-2xl bg-white/5 border border-purple-500/30 p-4 space-y-3">
+      <p className="text-center text-[11px] text-gray-700">Interactions · beta</p>
+    </div>
+
+    {/* Super message : modale plein écran (hors barre fixe → champs accessibles/scrollables) */}
+    {showSuper && (
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm overflow-y-auto"
+        onClick={e => { if (e.target === e.currentTarget) setShowSuper(false) }}>
+        <div className="w-full sm:max-w-md bg-gray-900 border border-purple-500/30 rounded-t-3xl sm:rounded-3xl p-5 space-y-3 max-h-[92vh] overflow-y-auto">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-purple-400" /> Super message</p>
-            <button onClick={() => setShowSuper(false)} className="text-gray-500 hover:text-white"><X className="w-4 h-4" /></button>
+            <button onClick={() => setShowSuper(false)} className="text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
           </div>
-          <p className="text-gray-400 text-xs">« {text.trim()} » apparaîtra en grand, animé, sur l'écran de la soirée.</p>
+          <div className="rounded-2xl bg-white/5 border border-white/10 p-3">
+            <p className="text-gray-300 text-sm">« {text.trim()} »</p>
+            <p className="text-gray-500 text-xs mt-1">apparaîtra en grand, animé, sur l'écran de la soirée.</p>
+          </div>
           <SuperMessageForm
             sessionId={sessionId} text={text.trim()} authorName={authorName}
             onSuccess={() => { setShowSuper(false); setText(''); setFeedback('Super message envoyé ✨') }}
             onCancel={() => setShowSuper(false)}
           />
         </div>
-      )}
-
-      <p className="text-center text-[11px] text-gray-700">Interactions · beta</p>
-    </div>
+      </div>
+    )}
+    </>
   )
 }
