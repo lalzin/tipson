@@ -24,7 +24,7 @@ export default function DisplayPage() {
     const emoji = EMOJI[type] ?? '❤️'
     const fid = counter.current++
     setFloats(f => [...f, { id: fid, emoji, left: 5 + Math.random() * 90 }])
-    setTimeout(() => setFloats(f => f.filter(x => x.id !== fid)), 3700)
+    setTimeout(() => setFloats(f => f.filter(x => x.id !== fid)), 2300)
   }, [])
 
   // Chargement session + messages initiaux
@@ -42,13 +42,13 @@ export default function DisplayPage() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `session_id=eq.${id}` },
         ({ new: m }: any) => {
           setMessages(prev => [...prev.slice(-40), m as Message])
-          if (m.is_super) { setSuperMsg(m as Message); setTimeout(() => setSuperMsg(null), 6000) }
+          if (m.is_super) { setSuperMsg(m as Message); setTimeout(() => setSuperMsg(null), 4500) }
         })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `session_id=eq.${id}` },
         ({ new: r }: any) => {
           if (r.status === 'approved') {
             setValidFlash(`${r.song_name} — ${r.artist}`)
-            setTimeout(() => setValidFlash(null), 3200)
+            setTimeout(() => setValidFlash(null), 2200)
           }
         })
       .subscribe()
@@ -123,11 +123,18 @@ export default function DisplayPage() {
         <p className="text-white/50 text-sm">Scannez pour participer</p>
       </div>
 
-      {/* Zone centrale (titre + flash de validation) */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none pr-72">
-        <h1 className="text-6xl lg:text-7xl font-black text-center drop-shadow-2xl">{session.name}</h1>
+      {/* Zone centrale (DJ + titre animés + flash de validation) */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none pr-72 text-center">
+        {session.profiles?.dj_name && (
+          <p className="dj-anim text-2xl lg:text-3xl font-bold text-purple-200 uppercase mb-3">
+            🎧 {session.profiles.dj_name}
+          </p>
+        )}
+        <h1 className="center-anim text-6xl lg:text-8xl font-black drop-shadow-2xl bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
+          {session.name}
+        </h1>
         {validFlash && (
-          <div className="valid-flash mt-10 px-8 py-5 rounded-3xl bg-white/10 backdrop-blur border border-white/20 text-center">
+          <div className="valid-flash mt-10 px-8 py-5 rounded-3xl bg-white/10 backdrop-blur border border-white/20">
             <p className="text-pink-300 text-sm font-bold uppercase tracking-widest">🎶 Nouveau son validé</p>
             <p className="text-3xl font-bold mt-1">{validFlash}</p>
           </div>

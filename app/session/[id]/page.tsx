@@ -791,7 +791,8 @@ export default function SessionPage() {
         </div>
       </div>
 
-      <div className="flex-1 px-5 sm:px-8 pt-5 sm:pt-8 pb-8 max-w-2xl mx-auto w-full space-y-4">
+      <div className={cn('flex-1 px-5 sm:px-8 pt-5 sm:pt-8 max-w-2xl mx-auto w-full space-y-4',
+        (session.display_enabled || session.messages_enabled) ? 'pb-52' : 'pb-8')}>
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Quel son vous voulez ?</h1>
           <p className="text-gray-400 text-sm sm:text-base mt-0.5">Recherchez un titre ou un artiste</p>

@@ -68,7 +68,7 @@ export default function InteractionBar({ sessionId, authorName, displayEnabled, 
   if (!displayEnabled && !messagesEnabled) return null
 
   return (
-    <div className="border-t border-white/10 bg-gray-950/95 backdrop-blur px-5 py-3 space-y-2.5">
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-gray-950/95 backdrop-blur px-5 py-3 space-y-2.5 shadow-2xl shadow-black/50 max-w-2xl mx-auto">
       {/* Emojis */}
       {displayEnabled && (
         <div className="flex items-center justify-center gap-2">

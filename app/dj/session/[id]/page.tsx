@@ -422,18 +422,38 @@ export default function DJSessionPage() {
               <ConfigToggle label="Messages du public" checked={!!(session as any).messages_enabled} onChange={v => updateConfig({ messages_enabled: v })} />
               <ConfigToggle label="Super messages (payant)" checked={!!(session as any).super_messages_enabled} onChange={v => updateConfig({ super_messages_enabled: v })} />
 
+              {/* Prix du super message */}
+              {(session as any).super_messages_enabled && (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm text-gray-300">Prix super message</span>
+                  <div className="relative w-24">
+                    <input
+                      type="number" min="0.5" step="0.5"
+                      value={((session as any).price_super_message ?? 200) / 100}
+                      onChange={e => {
+                        const cents = Math.round(parseFloat(e.target.value || '0') * 100)
+                        if (cents >= 50) updateConfig({ price_super_message: cents })
+                      }}
+                      className="w-full pl-3 pr-6 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-500 transition"
+                    />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Fond animé — liste déroulante (extensible) */}
               {(session as any).display_enabled && (
                 <div className="space-y-1.5">
-                  <p className="text-gray-500 text-xs">Fond animé</p>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {(['waves', 'pulse', 'particles'] as const).map(b => (
-                      <button key={b} onClick={() => updateConfig({ display_bg: b })}
-                        className={cn('py-1.5 rounded-lg text-xs capitalize transition border',
-                          (session as any).display_bg === b ? 'bg-purple-600/30 border-purple-500/40 text-purple-200' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white')}>
-                        {b === 'waves' ? 'Vagues' : b === 'pulse' ? 'Pulse' : 'Particules'}
-                      </button>
-                    ))}
-                  </div>
+                  <label className="text-gray-500 text-xs">Animation de fond</label>
+                  <select
+                    value={(session as any).display_bg ?? 'waves'}
+                    onChange={e => updateConfig({ display_bg: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-500 transition"
+                  >
+                    <option value="waves">Vagues</option>
+                    <option value="pulse">Pulse</option>
+                    <option value="particles">Particules</option>
+                  </select>
                 </div>
               )}
 
