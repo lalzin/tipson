@@ -198,8 +198,8 @@ export default function DJSettingsPage() {
 function FeeNote({ percent }: { percent: number }) {
   return (
     <p className="text-gray-600 text-xs leading-relaxed">
-      Sur chaque pourboire : commission TIPSON de <strong className="text-gray-400">{percent}%</strong>,
-      plus les frais de paiement Stripe (~1,5% + 0,25&nbsp;€). Le reste vous revient intégralement.
+      Sur chaque pourboire, une commission TIPSON de <strong className="text-gray-400">{percent}%</strong> est
+      prélevée ; le reste vous est reversé automatiquement sur votre compte bancaire.
     </p>
   )
 }

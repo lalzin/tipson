@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getAuthContext } from '@/lib/auth'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
-import { retrieveAccount, getAccountBalance, PLATFORM_FEE_PERCENT } from '@/lib/stripe'
+import { retrieveAccountStatus, getAccountBalance, PLATFORM_FEE_PERCENT } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,11 +19,12 @@ export async function GET() {
   }
 
   try {
-    const account = await retrieveAccount(accountId)
-    const charges_enabled = !!account.charges_enabled
-    const payouts_enabled = !!account.payouts_enabled
+    const { readyToReceivePayments, onboardingComplete } = await retrieveAccountStatus(accountId)
+    // Modèle V2 recipient : "prêt à recevoir" = capacité de transfert active
+    const charges_enabled = readyToReceivePayments
+    const payouts_enabled = readyToReceivePayments
 
-    // Met à jour le cache local
+    // Met à jour le cache local (utilisé par create-intent pour router le paiement)
     const admin = createServiceSupabaseClient()
     await admin.from('profiles')
       .update({ charges_enabled, payouts_enabled })
@@ -33,12 +34,12 @@ export async function GET() {
     let available = 0, pending = 0
     try {
       const bal = await getAccountBalance(accountId)
-      available = bal.available.filter(b => b.currency === 'eur').reduce((s, b) => s + b.amount, 0)
-      pending = bal.pending.filter(b => b.currency === 'eur').reduce((s, b) => s + b.amount, 0)
+      available = (bal.available as any[]).filter(b => b.currency === 'eur').reduce((s, b) => s + b.amount, 0)
+      pending = (bal.pending as any[]).filter(b => b.currency === 'eur').reduce((s, b) => s + b.amount, 0)
     } catch { /* compte pas encore prêt */ }
 
     return NextResponse.json({
-      onboarded: !!account.details_submitted,
+      onboarded: onboardingComplete,
       charges_enabled, payouts_enabled, available, pending,
       feePercent: PLATFORM_FEE_PERCENT,
     })

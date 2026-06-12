@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthContext } from '@/lib/auth'
 import { createServerSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase-server'
-import { createExpressAccount, createOnboardingLink } from '@/lib/stripe'
+import { createConnectAccount, createOnboardingLink } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       // Email pour pré-remplir l'onboarding
       const supabase = await createServerSupabaseClient()
       const { data: { user } } = await supabase.auth.getUser()
-      const account = await createExpressAccount(user?.email ?? undefined)
+      const account = await createConnectAccount(user?.email ?? undefined, auth.profile.dj_name)
       accountId = account.id
       await admin.from('profiles').update({ stripe_account_id: accountId }).eq('id', auth.userId)
     }

@@ -20,7 +20,8 @@ export function platformFee(amountCents: number): number {
  *
  * Si `destinationAccount` est fourni (DJ avec compte Connect actif), le paiement
  * est routé vers son compte : Stripe lui verse le montant moins la commission
- * plateforme et moins les frais Stripe (qu'il supporte, via on_behalf_of).
+ * plateforme. Les fonds (moins la commission) sont transférés au compte du DJ.
+ * Modèle V2 "recipient" : pas d'on_behalf_of (la plateforme reste merchant of record).
  */
 export async function createAuthorization(
   amountCents: number,
@@ -38,7 +39,6 @@ export async function createAuthorization(
   }
 
   if (destinationAccount) {
-    base.on_behalf_of = destinationAccount
     base.transfer_data = { destination: destinationAccount }
     base.application_fee_amount = platformFee(amountCents)
   }
@@ -46,38 +46,64 @@ export async function createAuthorization(
   return stripe.paymentIntents.create(base)
 }
 
-// ── Stripe Connect (versements aux organisateurs) ───────────────────────────
+// ── Stripe Connect V2 (versements aux organisateurs) ────────────────────────
 
-/** Crée un compte Connect Express pour un organisateur. */
-export async function createExpressAccount(email?: string) {
-  return stripe.accounts.create({
-    type: 'express',
-    country: 'FR',
-    email,
-    capabilities: {
-      card_payments: { requested: true },
-      transfers: { requested: true },
+/** Crée un compte connecté V2 (configuration "recipient") pour un organisateur. */
+export async function createConnectAccount(email?: string, displayName?: string) {
+  return stripe.v2.core.accounts.create({
+    display_name: displayName,
+    contact_email: email,
+    identity: { country: 'fr' },
+    dashboard: 'express',
+    defaults: {
+      responsibilities: {
+        fees_collector: 'application',
+        losses_collector: 'application',
+      },
     },
-    business_type: 'individual',
+    configuration: {
+      recipient: {
+        capabilities: {
+          stripe_balance: { stripe_transfers: { requested: true } },
+        },
+      },
+    },
   })
 }
 
-/** Lien d'onboarding hébergé par Stripe (IBAN, identité, infos légales). */
+/** Lien d'onboarding hébergé par Stripe (V2 Account Links). */
 export async function createOnboardingLink(accountId: string, refreshUrl: string, returnUrl: string) {
-  return stripe.accountLinks.create({
+  return stripe.v2.core.accountLinks.create({
     account: accountId,
-    refresh_url: refreshUrl,
-    return_url: returnUrl,
-    type: 'account_onboarding',
+    use_case: {
+      type: 'account_onboarding',
+      account_onboarding: {
+        configurations: ['recipient'],
+        refresh_url: refreshUrl,
+        return_url: returnUrl,
+      },
+    },
   })
 }
 
-/** Récupère l'état d'un compte connecté (charges/payouts activés ?). */
-export async function retrieveAccount(accountId: string) {
-  return stripe.accounts.retrieve(accountId)
+/**
+ * Statut d'un compte connecté V2 :
+ *  - readyToReceivePayments : capacité de transfert active (peut recevoir des fonds)
+ *  - onboardingComplete     : plus aucune information exigée immédiatement
+ */
+export async function retrieveAccountStatus(accountId: string) {
+  const account = await stripe.v2.core.accounts.retrieve(accountId, {
+    include: ['configuration.recipient', 'requirements'],
+  })
+  const readyToReceivePayments =
+    account?.configuration?.recipient?.capabilities?.stripe_balance?.stripe_transfers?.status === 'active'
+  const requirementsStatus = account.requirements?.summary?.minimum_deadline?.status
+  const onboardingComplete =
+    requirementsStatus !== 'currently_due' && requirementsStatus !== 'past_due'
+  return { readyToReceivePayments, onboardingComplete }
 }
 
-/** Lien de connexion au dashboard Express (solde, virements) hébergé par Stripe. */
+/** Lien vers le dashboard Express (solde, virements). Best-effort pour comptes V2. */
 export async function createExpressLoginLink(accountId: string) {
   return stripe.accounts.createLoginLink(accountId)
 }
