@@ -1,5 +1,26 @@
 import type { MusicLinks } from '@/types'
 
+/** Liens de recherche profonds (ouvrent l'app/web sur la recherche du morceau). */
+export function searchLinks(song: string, artist: string): MusicLinks {
+  const q = encodeURIComponent(`${song} ${artist}`.trim())
+  return {
+    spotify: `https://open.spotify.com/search/${q}`,
+    deezer: `https://www.deezer.com/search/${q}`,
+    appleMusic: `https://music.apple.com/search?term=${q}`,
+  }
+}
+
+/** Fusionne des liens exacts (Odesli) avec des liens de recherche en repli. */
+export function mergeWithSearch(exact: MusicLinks | null, song: string, artist: string): MusicLinks {
+  const fallback = searchLinks(song, artist)
+  return {
+    spotify: exact?.spotify || fallback.spotify,
+    deezer: exact?.deezer || fallback.deezer,
+    appleMusic: exact?.appleMusic || fallback.appleMusic,
+    youtube: exact?.youtube,
+  }
+}
+
 /**
  * Résout les liens multi-plateformes (Deezer, Apple Music, Spotify, YouTube)
  * d'un morceau via l'API Odesli (song.link), à partir de son URL iTunes.

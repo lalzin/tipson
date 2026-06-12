@@ -598,11 +598,11 @@ export default function SessionPage() {
   // ─── FORM ─────────────────────────────────────────────────────────
   if (step === 'form') {
     return (
-      <main className="min-h-screen flex flex-col px-6 pt-12 pb-8 bg-gradient-to-b from-gray-950 via-purple-950/10 to-gray-950">
-        <button onClick={() => setStep('select-option')} className="flex items-center gap-1 text-gray-400 hover:text-white mb-8 transition text-sm">
+      <main className="min-h-screen flex flex-col px-6 pt-8 pb-8 bg-gradient-to-b from-gray-950 via-purple-950/10 to-gray-950">
+        <button onClick={() => setStep('select-option')} className="flex items-center gap-1 text-gray-400 hover:text-white mb-5 transition text-sm">
           <ArrowLeft className="w-4 h-4" /> Retour
         </button>
-        <div className="flex-1 flex flex-col space-y-5 max-w-md mx-auto w-full">
+        <div className="flex flex-col space-y-5 max-w-md mx-auto w-full">
           <div>
             <h2 className="text-2xl font-bold">Votre demande</h2>
             <p className="text-gray-400 text-sm mt-1">
@@ -628,7 +628,7 @@ export default function SessionPage() {
             </div>
           )}
 
-          <div className="space-y-4 flex-1">
+          <div className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-gray-300">Votre prénom *</label>
               <input
@@ -659,7 +659,7 @@ export default function SessionPage() {
             className="w-full py-4 rounded-2xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-lg flex items-center justify-center gap-2 transition active:scale-95"
           >
             {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-            Continuer vers le paiement →
+            {amount === 0 ? 'Valider ma demande →' : 'Continuer vers le paiement →'}
           </button>
         </div>
       </main>
