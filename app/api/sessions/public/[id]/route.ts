@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const { data, error } = await supabase
     .from('sessions')
-    .select('id, name, code, status, session_type, price_normal, price_priority, price_karaoke, price_karaoke_priority, express_enabled, venue, profiles(dj_name, paypal_me_url)')
+    .select('id, name, code, status, session_type, price_normal, price_priority, price_karaoke, price_karaoke_priority, express_enabled, display_enabled, messages_enabled, super_messages_enabled, price_super_message, display_bg, venue, profiles(dj_name, paypal_me_url)')
     .eq('id', params.id)
     .single()
 

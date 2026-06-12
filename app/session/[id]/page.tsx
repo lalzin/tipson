@@ -13,6 +13,7 @@ import { cn, formatPrice } from '@/lib/utils'
 import dynamic from 'next/dynamic'
 import AuthGate from '@/components/customer/AuthGate'
 import KaraokeView from '@/components/customer/KaraokeView'
+import InteractionBar from '@/components/customer/InteractionBar'
 
 const StripePaymentForm = dynamic(() => import('@/components/StripePaymentForm'), { ssr: false })
 
@@ -860,6 +861,17 @@ export default function SessionPage() {
           </div>
         )}
       </div>
+
+      {(session.display_enabled || session.messages_enabled) && (
+        <InteractionBar
+          sessionId={id}
+          authorName={customerName}
+          displayEnabled={!!session.display_enabled}
+          messagesEnabled={!!session.messages_enabled}
+          superEnabled={!!session.super_messages_enabled}
+          superPrice={session.price_super_message ?? 200}
+        />
+      )}
     </main>
   )
 }

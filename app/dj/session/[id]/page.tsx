@@ -117,6 +117,16 @@ export default function DJSessionPage() {
     }
   }
 
+  async function updateConfig(patch: Record<string, unknown>) {
+    if (!session) return
+    setSession({ ...session, ...patch } as typeof session) // optimiste
+    const res = await fetch(`/api/sessions/${session.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    })
+    if (res.ok) setSession(await res.json())
+  }
+
   async function prioritizeRequest(reqId: string) {
     const res = await fetch(`/api/requests/${reqId}/prioritize`, { method: 'POST' })
     if (res.ok) {
@@ -399,6 +409,42 @@ export default function DJSessionPage() {
               <Share2 className="w-4 h-4" /> Afficher le QR Code
             </button>
           </div>
+
+          {/* Mode visualisation (beta) — DJ uniquement */}
+          {session && session.session_type !== 'karaoke' && (
+            <div className="glass rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold flex items-center gap-1.5">📺 Visualisation</p>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">beta</span>
+              </div>
+
+              <ConfigToggle label="Écran d'affichage" checked={!!(session as any).display_enabled} onChange={v => updateConfig({ display_enabled: v })} />
+              <ConfigToggle label="Messages du public" checked={!!(session as any).messages_enabled} onChange={v => updateConfig({ messages_enabled: v })} />
+              <ConfigToggle label="Super messages (payant)" checked={!!(session as any).super_messages_enabled} onChange={v => updateConfig({ super_messages_enabled: v })} />
+
+              {(session as any).display_enabled && (
+                <div className="space-y-1.5">
+                  <p className="text-gray-500 text-xs">Fond animé</p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {(['waves', 'pulse', 'particles'] as const).map(b => (
+                      <button key={b} onClick={() => updateConfig({ display_bg: b })}
+                        className={cn('py-1.5 rounded-lg text-xs capitalize transition border',
+                          (session as any).display_bg === b ? 'bg-purple-600/30 border-purple-500/40 text-purple-200' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white')}>
+                        {b === 'waves' ? 'Vagues' : b === 'pulse' ? 'Pulse' : 'Particules'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(session as any).display_enabled && (
+                <a href={`/display/${id}`} target="_blank" rel="noopener noreferrer"
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-sm font-semibold transition flex items-center justify-center gap-2">
+                  Ouvrir l&apos;affichage ↗
+                </a>
+              )}
+            </div>
+          )}
         </aside>
 
         {/* ── COLONNE DROITE : LISTE DES DEMANDES ── */}
@@ -602,6 +648,17 @@ function StatMini({ value, label, color }: { value: string; label: string; color
       <p className={cn('font-black text-lg leading-none', colors[color])}>{value}</p>
       <p className="text-gray-600 text-xs mt-1 leading-none">{label}</p>
     </div>
+  )
+}
+
+function ConfigToggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button type="button" onClick={() => onChange(!checked)} className="w-full flex items-center justify-between gap-3 text-left">
+      <span className="text-sm text-gray-300">{label}</span>
+      <span className={cn('w-9 h-5 rounded-full p-0.5 transition flex-shrink-0', checked ? 'bg-purple-500' : 'bg-white/10')}>
+        <span className={cn('block w-4 h-4 rounded-full bg-white transition-transform', checked ? 'translate-x-4' : 'translate-x-0')} />
+      </span>
+    </button>
   )
 }
 

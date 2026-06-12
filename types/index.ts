@@ -28,9 +28,24 @@ export interface Session {
   price_karaoke: number
   price_karaoke_priority: number
   express_enabled: boolean
+  display_enabled: boolean
+  messages_enabled: boolean
+  super_messages_enabled: boolean
+  price_super_message: number
+  display_bg: string
   venue: string | null
   created_at: string
   ended_at: string | null
+}
+
+export interface Message {
+  id: string
+  session_id: string
+  text: string
+  author_name: string | null
+  is_super: boolean
+  amount: number
+  created_at: string
 }
 
 export interface Request {

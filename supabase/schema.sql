@@ -120,3 +120,26 @@ alter table sessions add column if not exists express_enabled boolean not null d
 -- ── Liens multi-plateformes (Deezer/Apple/Spotify via Odesli song.link) ─────────
 alter table requests add column if not exists itunes_url text;
 alter table requests add column if not exists music_links jsonb;
+
+-- ── Mode visualisation / interactions écran (beta) ──────────────────────────────
+alter table sessions add column if not exists display_enabled boolean not null default false;
+alter table sessions add column if not exists messages_enabled boolean not null default false;
+alter table sessions add column if not exists super_messages_enabled boolean not null default false;
+alter table sessions add column if not exists price_super_message integer not null default 200;
+alter table sessions add column if not exists display_bg text not null default 'waves';
+
+create table if not exists messages (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid references sessions(id) on delete cascade not null,
+  text text not null,
+  author_name text,
+  is_super boolean not null default false,
+  amount integer not null default 0,
+  stripe_payment_intent_id text,
+  created_at timestamptz default now()
+);
+create index if not exists messages_session_idx on messages(session_id);
+alter table messages enable row level security;
+-- Lecture publique (écran d'affichage anon) ; insertions via service client (modération serveur)
+create policy "messages_public_read" on messages for select using (true);
+alter publication supabase_realtime add table messages;
