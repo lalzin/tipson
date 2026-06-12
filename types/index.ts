@@ -10,6 +10,9 @@ export interface Profile {
   paypal_me_url: string | null
   is_dj: boolean
   is_admin: boolean
+  stripe_account_id: string | null
+  charges_enabled: boolean
+  payouts_enabled: boolean
   created_at: string
 }
 

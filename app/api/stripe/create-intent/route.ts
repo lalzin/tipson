@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const supabase = createServiceSupabaseClient()
   const { data: request, error } = await supabase
     .from('requests')
-    .select('id, song_name, artist, amount, status, session_id')
+    .select('id, song_name, artist, amount, status, session_id, sessions!inner(dj_id)')
     .eq('id', request_id)
     .eq('status', 'pending_payment')
     .single()
@@ -26,10 +26,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Montant invalide (minimum 0,50 €)' }, { status: 400 })
   }
 
+  // Route le paiement vers le compte du DJ s'il a activé ses versements (Connect).
+  // Sinon, le paiement va sur le compte central (comportement actuel, fonds à
+  // reverser manuellement — d'où l'intérêt d'inciter à l'onboarding).
+  const djId = (request as any).sessions?.dj_id
+  let destinationAccount: string | undefined
+  if (djId) {
+    const { data: dj } = await supabase
+      .from('profiles')
+      .select('stripe_account_id, charges_enabled')
+      .eq('id', djId)
+      .single()
+    if (dj?.stripe_account_id && dj.charges_enabled) {
+      destinationAccount = dj.stripe_account_id
+    }
+  }
+
   const intent = await createAuthorization(
     request.amount,
     `TIPSON — ${request.song_name} par ${request.artist}`,
     { request_id: request.id, session_id: request.session_id },
+    destinationAccount,
   )
 
   await supabase

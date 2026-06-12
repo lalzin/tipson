@@ -108,3 +108,8 @@ alter table profiles add column if not exists is_admin boolean not null default 
 
 -- ── Migration Stripe (remplace PayPal) ──────────────────────────────────────────
 alter table requests add column if not exists stripe_payment_intent_id text;
+
+-- ── Stripe Connect (versements aux organisateurs) ───────────────────────────────
+alter table profiles add column if not exists stripe_account_id text;
+alter table profiles add column if not exists charges_enabled boolean not null default false;
+alter table profiles add column if not exists payouts_enabled boolean not null default false;
