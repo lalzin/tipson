@@ -428,11 +428,14 @@ export default function DJSessionPage() {
                   <span className="text-sm text-gray-300">Prix super message</span>
                   <div className="relative w-24">
                     <input
+                      key={session.id}
                       type="number" min="0.5" step="0.5"
-                      value={((session as any).price_super_message ?? 200) / 100}
-                      onChange={e => {
-                        const cents = Math.round(parseFloat(e.target.value || '0') * 100)
-                        if (cents >= 50) updateConfig({ price_super_message: cents })
+                      defaultValue={(((session as any).price_super_message || 200)) / 100}
+                      onBlur={e => {
+                        let cents = Math.round(parseFloat(e.target.value || '0') * 100)
+                        if (isNaN(cents) || cents < 50) cents = 50
+                        e.target.value = String(cents / 100)
+                        updateConfig({ price_super_message: cents })
                       }}
                       className="w-full pl-3 pr-6 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-500 transition"
                     />
