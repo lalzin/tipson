@@ -145,28 +145,44 @@ export default function SessionPage() {
     return () => subscription.unsubscribe()
   }, [id])
 
-  // Realtime: suivi de la demande client (coupé si onglet en arrière-plan)
+  // Suivi du statut de la demande : realtime (instantané) + poll de secours.
+  // S'ARRÊTE dès que la demande est terminée et quand l'onglet est en arrière-plan.
+  const reqId = request?.id
+  const reqTerminal = request ? ['played', 'rejected'].includes(request.status) : true
   useEffect(() => {
-    if (!request) return
+    if (!reqId || reqTerminal) return
     const supabase = createClient()
     let channel: ReturnType<typeof supabase.channel> | null = null
+    let poll: ReturnType<typeof setInterval> | null = null
+
+    const refetch = () =>
+      fetch(`/api/requests/${reqId}/public`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setRequest(prev => prev ? { ...prev, ...d } : prev) })
+        .catch(() => {})
 
     function start() {
-      if (channel) return
-      channel = supabase
-        .channel(`request-${request!.id}`)
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `id=eq.${request!.id}` },
-          payload => setRequest(prev => prev ? { ...prev, ...(payload.new as Request) } : prev)
-        )
-        .subscribe()
+      if (!channel) {
+        channel = supabase
+          .channel(`request-${reqId}`)
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `id=eq.${reqId}` },
+            payload => setRequest(prev => prev ? { ...prev, ...(payload.new as Request) } : prev)
+          )
+          .subscribe()
+      }
+      // Filet de sécurité si le realtime n'est pas activé sur la table (15s, visible uniquement)
+      if (!poll) poll = setInterval(() => { if (!document.hidden) refetch() }, 15000)
     }
-    function stop() { if (channel) { supabase.removeChannel(channel); channel = null } }
+    function stop() {
+      if (channel) { supabase.removeChannel(channel); channel = null }
+      if (poll) { clearInterval(poll); poll = null }
+    }
 
-    function onVisibility() { if (document.hidden) stop(); else start() }
+    function onVisibility() { if (document.hidden) stop(); else { start(); refetch() } }
     if (!document.hidden) start()
     document.addEventListener('visibilitychange', onVisibility)
     return () => { document.removeEventListener('visibilitychange', onVisibility); stop() }
-  }, [request?.id])
+  }, [reqId, reqTerminal])
 
   const searchTracks = useCallback(async (q: string) => {
     if (q.trim().length < 2) { setTracks([]); return }

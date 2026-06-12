@@ -57,59 +57,81 @@ export default function KaraokeView({ session, user, guestMode, sessionId }: Pro
     }
   }, [sessionId])
 
-  // Realtime: suivi de la demande + position dans la file.
-  // Connexions coupées quand l'onglet est en arrière-plan (économie de data).
+  // Suivi du statut + position : realtime (instantané) + poll de secours.
+  // S'arrête quand la demande est terminée ou quand l'onglet est en arrière-plan.
+  const reqId = request?.id
+  const reqStatus = request?.status
+  const reqQueuePos = request?.queue_position ?? null
+  const reqTerminal = reqStatus ? ['played', 'rejected'].includes(reqStatus) : true
   useEffect(() => {
-    if (!request || !session.id) return
+    if (!reqId || !session.id || reqTerminal) return
     const supabase = createClient()
     let reqChannel: ReturnType<typeof supabase.channel> | null = null
     let queueChannel: ReturnType<typeof supabase.channel> | null = null
+    let reqPoll: ReturnType<typeof setInterval> | null = null
+    let queuePoll: ReturnType<typeof setInterval> | null = null
 
-    function computeAhead(requests: Request[]) {
-      const waiting = requests.filter(r =>
-        r.status === 'paid' && r.queue_position !== null && r.queue_position < (request!.queue_position ?? 999)
-      )
-      setQueueAhead(waiting.length)
-    }
+    const refetchReq = () =>
+      fetch(`/api/requests/${reqId}/public`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setRequest(prev => prev ? { ...prev, ...d } : prev) })
+        .catch(() => {})
 
     async function loadQueue() {
       const { data } = await supabase.from('requests')
         .select('id, status, queue_position')
         .eq('session_id', session.id)
         .in('status', ['paid', 'approved'])
-      if (data) computeAhead(data as any)
+      if (data) {
+        const ahead = (data as any[]).filter(r =>
+          r.status === 'paid' && r.queue_position !== null && r.queue_position < (reqQueuePos ?? 999)
+        )
+        setQueueAhead(ahead.length)
+      }
     }
 
     function start() {
-      if (reqChannel) return
-      reqChannel = supabase
-        .channel(`karaoke-req-${request!.id}`)
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `id=eq.${request!.id}` },
-          payload => setRequest(prev => prev ? { ...prev, ...(payload.new as Request) } : prev)
-        )
-        .subscribe()
-      queueChannel = supabase
-        .channel(`karaoke-queue-${session.id}`)
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `session_id=eq.${session.id}` },
-          () => loadQueue()
-        )
-        .subscribe()
-      loadQueue()
+      // Suivi du statut de SA demande (toujours)
+      if (!reqChannel) {
+        reqChannel = supabase
+          .channel(`karaoke-req-${reqId}`)
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `id=eq.${reqId}` },
+            payload => setRequest(prev => prev ? { ...prev, ...(payload.new as Request) } : prev)
+          )
+          .subscribe()
+      }
+      if (!reqPoll) reqPoll = setInterval(() => { if (!document.hidden) refetchReq() }, 15000)
+
+      // Position dans la file : seulement tant qu'on est en attente
+      if (reqStatus === 'paid') {
+        if (!queueChannel) {
+          queueChannel = supabase
+            .channel(`karaoke-queue-${session.id}`)
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `session_id=eq.${session.id}` },
+              () => loadQueue()
+            )
+            .subscribe()
+        }
+        if (!queuePoll) queuePoll = setInterval(() => { if (!document.hidden) loadQueue() }, 15000)
+        loadQueue()
+      }
     }
     function stop() {
       if (reqChannel) { supabase.removeChannel(reqChannel); reqChannel = null }
       if (queueChannel) { supabase.removeChannel(queueChannel); queueChannel = null }
+      if (reqPoll) { clearInterval(reqPoll); reqPoll = null }
+      if (queuePoll) { clearInterval(queuePoll); queuePoll = null }
     }
 
     function onVisibility() {
       if (document.hidden) stop()
-      else start()
+      else { start(); refetchReq() }
     }
     if (!document.hidden) start()
     document.addEventListener('visibilitychange', onVisibility)
 
     return () => { document.removeEventListener('visibilitychange', onVisibility); stop() }
-  }, [request?.id, request?.queue_position, session.id])
+  }, [reqId, reqStatus, reqQueuePos, reqTerminal, session.id])
 
   const searchTracks = useCallback(async (q: string) => {
     if (q.trim().length < 2) { setTracks([]); return }

@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const { data, error } = await admin
     .from('requests')
-    .select('id, song_name, artist, album_image, request_type, status, amount, message, refunded, session_id')
+    .select('id, song_name, artist, album_image, request_type, status, amount, message, refunded, queue_position, customer_name, session_id')
     .eq('id', params.id)
     .single()
 
