@@ -2,7 +2,6 @@
 import { Mic2, Play, X, CheckCircle2, Music2, Clock, Users, Loader2, ArrowUp } from 'lucide-react'
 import type { Request } from '@/types'
 import { cn, formatPrice } from '@/lib/utils'
-import MusicLinks from '@/components/dj/MusicLinks'
 
 interface Props {
   requests: Request[]
@@ -46,7 +45,6 @@ export default function KaraokeQueue({ requests, onCall, onDone, onSkip, onPrior
                   <p className="text-gray-300 text-sm italic">&ldquo;{req.message}&rdquo;</p>
                 </div>
               )}
-              <MusicLinks requestId={req.id} cached={req.music_links} />
               <button onClick={() => onDone(req.id)}
                 className="w-full py-3 rounded-xl bg-green-600/20 border border-green-500/30 text-green-300 hover:bg-green-600/35 font-semibold text-sm flex items-center justify-center gap-2 transition">
                 <CheckCircle2 className="w-4 h-4" /> Performance terminée
@@ -102,7 +100,6 @@ export default function KaraokeQueue({ requests, onCall, onDone, onSkip, onPrior
                 <p className="text-gray-400 text-xs italic">&ldquo;{req.message}&rdquo;</p>
               </div>
             )}
-            <MusicLinks requestId={req.id} cached={req.music_links} />
             {index === 0 ? (
               <div className="grid grid-cols-2 gap-2">
                 <button onClick={() => onCall(req.id)}
