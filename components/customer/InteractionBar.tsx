@@ -17,20 +17,32 @@ const EMOJIS = [
 
 interface Props {
   sessionId: string
-  authorName: string
   displayEnabled: boolean
   messagesEnabled: boolean
   superEnabled: boolean
   superPrice: number
 }
 
-export default function InteractionBar({ sessionId, authorName, displayEnabled, messagesEnabled, superEnabled, superPrice }: Props) {
+export default function InteractionBar({ sessionId, displayEnabled, messagesEnabled, superEnabled, superPrice }: Props) {
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
   const lastEmoji = useRef(0)
   const [text, setText] = useState('')
+  const [pseudo, setPseudo] = useState('')
   const [sending, setSending] = useState(false)
   const [feedback, setFeedback] = useState('')
   const [showSuper, setShowSuper] = useState(false)
+
+  // Pseudo choisi par l'utilisateur (jamais le vrai nom auto). Mémorisé en local.
+  useEffect(() => {
+    const saved = localStorage.getItem('tipson-pseudo')
+    if (saved) setPseudo(saved)
+  }, [])
+  function updatePseudo(v: string) {
+    const clean = v.slice(0, 24)
+    setPseudo(clean)
+    localStorage.setItem('tipson-pseudo', clean)
+  }
+  const authorName = pseudo.trim()
 
   // Canal broadcast pour les emojis (éphémère, aucune écriture en base)
   useEffect(() => {
@@ -81,19 +93,26 @@ export default function InteractionBar({ sessionId, authorName, displayEnabled, 
         </div>
       )}
 
-      {/* Message */}
+      {/* Message + pseudo */}
       {messagesEnabled && (
-        <div className="flex items-center gap-2">
+        <div className="space-y-2">
           <input
-            value={text} onChange={e => setText(e.target.value)} maxLength={140}
-            onKeyDown={e => { if (e.key === 'Enter') sendMessage() }}
-            placeholder="Un message pour l'écran…"
-            className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 transition text-sm"
+            value={pseudo} onChange={e => updatePseudo(e.target.value)} maxLength={24}
+            placeholder="Votre nom affiché (optionnel)"
+            className="w-full px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 transition text-xs"
           />
-          <button onClick={sendMessage} disabled={sending || !text.trim()}
-            className="w-10 h-10 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 flex items-center justify-center transition flex-shrink-0">
-            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          </button>
+          <div className="flex items-center gap-2">
+            <input
+              value={text} onChange={e => setText(e.target.value)} maxLength={140}
+              onKeyDown={e => { if (e.key === 'Enter') sendMessage() }}
+              placeholder="Un message pour l'écran…"
+              className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 transition text-sm"
+            />
+            <button onClick={sendMessage} disabled={sending || !text.trim()}
+              className="w-10 h-10 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 flex items-center justify-center transition flex-shrink-0">
+              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
       )}
 

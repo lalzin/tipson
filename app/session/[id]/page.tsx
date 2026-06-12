@@ -866,7 +866,6 @@ export default function SessionPage() {
       {(session.display_enabled || session.messages_enabled) && (
         <InteractionBar
           sessionId={id}
-          authorName={customerName}
           displayEnabled={!!session.display_enabled}
           messagesEnabled={!!session.messages_enabled}
           superEnabled={!!session.super_messages_enabled}

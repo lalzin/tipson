@@ -27,11 +27,16 @@ export default function DisplayPage() {
     setTimeout(() => setFloats(f => f.filter(x => x.id !== fid)), 2300)
   }, [])
 
-  // Chargement session + messages initiaux
+  // Chargement de la session (les messages restent éphémères : pas d'historique)
   useEffect(() => {
     fetch(`/api/sessions/public/${id}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(setSession).finally(() => setLoading(false))
-    fetch(`/api/sessions/${id}/messages`).then(r => r.ok ? r.json() : null).then(d => { if (d?.messages) setMessages(d.messages) })
   }, [id])
+
+  // Ajoute un message temporaire (disparaît au bout de 40s)
+  const pushMessage = useCallback((m: Message) => {
+    setMessages(prev => [...prev, m])
+    setTimeout(() => setMessages(prev => prev.filter(x => x.id !== m.id)), 40000)
+  }, [])
 
   // Realtime : emojis (broadcast), messages (insert), validation de son (update)
   useEffect(() => {
@@ -41,7 +46,7 @@ export default function DisplayPage() {
       .on('broadcast', { event: 'emoji' }, ({ payload }) => spawnEmoji(payload?.type))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `session_id=eq.${id}` },
         ({ new: m }: any) => {
-          setMessages(prev => [...prev.slice(-40), m as Message])
+          pushMessage(m as Message)
           if (m.is_super) { setSuperMsg(m as Message); setTimeout(() => setSuperMsg(null), 4500) }
         })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `session_id=eq.${id}` },
@@ -53,7 +58,7 @@ export default function DisplayPage() {
         })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [id, spawnEmoji])
+  }, [id, spawnEmoji, pushMessage])
 
   if (loading) return <div className="min-h-screen bg-gray-950" />
   if (!session) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-gray-500">Soirée introuvable</div>
