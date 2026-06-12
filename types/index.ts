@@ -52,7 +52,16 @@ export interface Request {
   refunded: boolean
   customer_email: string | null
   customer_user_id: string | null
+  itunes_url: string | null
+  music_links: MusicLinks | null
   created_at: string
+}
+
+export interface MusicLinks {
+  spotify?: string
+  deezer?: string
+  appleMusic?: string
+  youtube?: string
 }
 
 export interface SearchTrack {
@@ -64,4 +73,5 @@ export interface SearchTrack {
   imageSm: string
   previewUrl: string | null
   durationMs: number
+  url: string | null
 }

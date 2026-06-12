@@ -10,6 +10,7 @@ export interface SearchTrack {
   imageSm: string    // 100x100
   previewUrl: string | null
   durationMs: number
+  url: string | null   // lien iTunes (pour résoudre les liens multi-plateformes)
 }
 
 export async function GET(req: NextRequest) {
@@ -40,6 +41,7 @@ export async function GET(req: NextRequest) {
       imageSm: item.artworkUrl100 ?? '',
       previewUrl: item.previewUrl ?? null,
       durationMs: item.trackTimeMillis ?? 0,
+      url: item.trackViewUrl ?? null,
     }))
 
     return NextResponse.json({ tracks })

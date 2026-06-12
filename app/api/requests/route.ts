@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
     message,
     customer_email,
     customer_user_id,
+    itunes_url,
   } = body
 
   if (!session_id || !customer_name || !song_name || !artist) {
@@ -104,6 +105,7 @@ export async function POST(req: NextRequest) {
       queue_position: queuePosition,
       customer_email: customer_email || null,
       customer_user_id: customer_user_id || null,
+      itunes_url: itunes_url || null,
     })
     .select()
     .single()

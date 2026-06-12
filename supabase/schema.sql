@@ -116,3 +116,7 @@ alter table profiles add column if not exists payouts_enabled boolean not null d
 
 -- ── Mode express activable/désactivable par session ─────────────────────────────
 alter table sessions add column if not exists express_enabled boolean not null default true;
+
+-- ── Liens multi-plateformes (Deezer/Apple/Spotify via Odesli song.link) ─────────
+alter table requests add column if not exists itunes_url text;
+alter table requests add column if not exists music_links jsonb;

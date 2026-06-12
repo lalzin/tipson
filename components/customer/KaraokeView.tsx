@@ -162,6 +162,7 @@ export default function KaraokeView({ session, user, guestMode, sessionId }: Pro
           song_name: selectedTrack.name,
           artist: selectedTrack.artist,
           album_image: selectedTrack.image,
+          itunes_url: selectedTrack.url,
           request_type: 'karaoke',
           is_priority: isPriority,
           message: message.trim() || null,

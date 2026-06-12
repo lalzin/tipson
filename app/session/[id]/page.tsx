@@ -215,6 +215,7 @@ export default function SessionPage() {
           artist: selectedTrack.artist,
           spotify_uri: null,
           album_image: selectedTrack.image,
+          itunes_url: selectedTrack.url,
           customer_email: user?.email ?? null,
           customer_user_id: user?.id ?? null,
           request_type: requestType,

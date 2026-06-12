@@ -11,6 +11,7 @@ import type { Request, Session } from '@/types'
 import { cn, formatPrice } from '@/lib/utils'
 import QRModal from '@/components/dj/QRModal'
 import KaraokeQueue from '@/components/dj/KaraokeQueue'
+import MusicLinks from '@/components/dj/MusicLinks'
 
 type FilterStatus = 'paid' | 'approved' | 'played' | 'rejected' | 'all'
 
@@ -671,6 +672,8 @@ function RequestCard({ request, onApprove, onReject, onPlayed }: {
           <p className="text-gray-300 text-sm italic leading-snug">&ldquo;{request.message}&rdquo;</p>
         </div>
       )}
+
+      <MusicLinks requestId={request.id} cached={request.music_links} />
 
       {isPending && (
         <div className="grid grid-cols-2 gap-2">
