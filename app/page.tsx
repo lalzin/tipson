@@ -3,29 +3,13 @@ import {
   Music2, Mic2, Zap, QrCode, ShieldCheck, Wallet,
   ArrowRight, Radio, ListMusic, Sparkles,
 } from 'lucide-react'
+import LandingNav from '@/components/LandingNav'
 
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-gray-950 text-white overflow-x-hidden">
-      {/* ── Nav ───────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-30 backdrop-blur bg-gray-950/70 border-b border-white/5">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-900/30">
-              <span className="font-black text-lg">T</span>
-            </div>
-            <span className="font-black text-lg tracking-tight">TIPSON</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link href="/dj" className="px-3 sm:px-4 py-2 rounded-xl text-sm text-gray-300 hover:text-white hover:bg-white/5 transition">
-              Espace DJ
-            </Link>
-            <Link href="/join" className="px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold bg-white text-gray-950 hover:bg-gray-200 transition">
-              Rejoindre
-            </Link>
-          </div>
-        </div>
-      </nav>
+      {/* ── Nav (auth-aware) ──────────────────────────────────── */}
+      <LandingNav />
 
       {/* ── Hero ──────────────────────────────────────────────── */}
       <section className="relative">
