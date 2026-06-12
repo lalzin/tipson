@@ -29,6 +29,16 @@ export default function AuthGate({ sessionName, djName, onAuth }: Props) {
     if (error) { setError(error.message); setLoading(false) }
   }
 
+  async function signInWithApple() {
+    setLoading(true)
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'apple',
+      options: { redirectTo: `${window.location.origin}${window.location.pathname}` },
+    })
+    if (error) { setError(error.message); setLoading(false) }
+  }
+
   async function signInWithEmail(e: React.FormEvent) {
     e.preventDefault()
     if (!email.trim()) return
@@ -104,6 +114,18 @@ export default function AuthGate({ sessionName, djName, onAuth }: Props) {
                 <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/>
               </svg>
               Continuer avec Google
+            </button>
+
+            {/* Apple */}
+            <button
+              onClick={signInWithApple}
+              disabled={loading}
+              className="w-full py-3.5 rounded-2xl bg-black text-white border border-white/15 font-semibold flex items-center justify-center gap-3 hover:bg-gray-900 disabled:opacity-50 transition active:scale-[0.98]"
+            >
+              <svg width="16" height="18" viewBox="0 0 16 18" fill="currentColor">
+                <path d="M13.07 9.57c-.02-1.9 1.55-2.8 1.62-2.85-.88-1.3-2.26-1.47-2.75-1.49-1.17-.12-2.28.69-2.87.69-.59 0-1.5-.67-2.47-.65-1.27.02-2.44.74-3.09 1.88-1.32 2.29-.34 5.68.95 7.54.63.91 1.38 1.93 2.36 1.9.95-.04 1.31-.61 2.46-.61s1.47.61 2.47.59c1.02-.02 1.67-.93 2.29-1.84.72-1.06 1.02-2.08 1.04-2.13-.02-.01-1.99-.77-2.01-3.03zM11.2 3.9c.52-.64.88-1.51.78-2.4-.75.03-1.67.5-2.21 1.13-.49.56-.91 1.46-.8 2.32.84.07 1.7-.42 2.23-1.05z"/>
+              </svg>
+              Continuer avec Apple
             </button>
 
             {/* Séparateur */}
