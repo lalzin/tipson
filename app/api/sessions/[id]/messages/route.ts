@@ -29,19 +29,29 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (limited) return limited
   if (!isValidUuid(params.id)) return NextResponse.json({ error: 'Session invalide' }, { status: 400 })
 
-  const { text, author_name } = await req.json()
+  const { text, author_name, is_super } = await req.json()
 
   const admin = createServiceSupabaseClient()
+  // select('*') → robuste même si certaines colonnes n'existent pas encore
   const { data: session } = await admin
     .from('sessions')
-    .select('id, status, messages_enabled, toxicity_threshold')
+    .select('*')
     .eq('id', params.id)
     .single()
 
   if (!session || session.status !== 'active') {
     return NextResponse.json({ error: 'Session inactive' }, { status: 404 })
   }
-  if (!session.messages_enabled) {
+
+  // Super message gratuit : autorisé seulement si activé ET prix à 0
+  if (is_super) {
+    if (!session.super_messages_enabled) {
+      return NextResponse.json({ error: 'Super-messages désactivés' }, { status: 403 })
+    }
+    if ((session.price_super_message ?? 200) > 0) {
+      return NextResponse.json({ error: 'Paiement requis pour le super message' }, { status: 402 })
+    }
+  } else if (!session.messages_enabled) {
     return NextResponse.json({ error: 'Les messages ne sont pas activés pour cette soirée' }, { status: 403 })
   }
 
@@ -64,7 +74,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     session_id: params.id,
     text: raw,
     author_name: author_name ? String(author_name).slice(0, 40) : null,
-    is_super: false,
+    is_super: !!is_super,
     amount: 0,
   })
 

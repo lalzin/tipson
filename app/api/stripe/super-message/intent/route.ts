@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   const admin = createServiceSupabaseClient()
   const { data: session } = await admin
     .from('sessions')
-    .select('id, status, super_messages_enabled, price_super_message, dj_id, toxicity_threshold')
+    .select('*')
     .eq('id', session_id)
     .single()
 

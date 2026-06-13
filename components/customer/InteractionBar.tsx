@@ -63,6 +63,23 @@ export default function InteractionBar({ sessionId, displayEnabled, messagesEnab
     channelRef.current?.send({ type: 'broadcast', event: 'emoji', payload: { type } })
   }
 
+  async function sendSuper() {
+    if (!text.trim()) { setFeedback('Écrivez d\'abord votre message'); return }
+    if (superPrice > 0) { setShowSuper(true); return }
+    // Gratuit → publication directe (modérée côté serveur)
+    setSending(true); setFeedback('')
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}/messages`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text.trim(), author_name: authorName || null, is_super: true }),
+      })
+      const d = await res.json()
+      if (!res.ok) setFeedback(d.error || 'Super message refusé')
+      else { setText(''); setFeedback('Super message envoyé ✨') }
+    } catch { setFeedback('Erreur réseau') }
+    finally { setSending(false); setTimeout(() => setFeedback(''), 2500) }
+  }
+
   async function sendMessage() {
     const t = text.trim()
     if (!t) return
@@ -123,8 +140,8 @@ export default function InteractionBar({ sessionId, displayEnabled, messagesEnab
 
       {/* Super message */}
       {messagesEnabled && superEnabled && !showSuper && (
-        <button onClick={() => { if (text.trim()) setShowSuper(true); else setFeedback('Écrivez d\'abord votre message') }}
-          className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 text-purple-200 text-sm font-medium hover:from-purple-600/30 hover:to-pink-600/30 transition">
+        <button onClick={sendSuper} disabled={sending}
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 text-purple-200 text-sm font-medium hover:from-purple-600/30 hover:to-pink-600/30 disabled:opacity-50 transition">
           <Sparkles className="w-4 h-4" /> Super message en grand sur l'écran · {formatPrice(superPrice)}
         </button>
       )}

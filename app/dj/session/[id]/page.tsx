@@ -519,11 +519,12 @@ export default function DJSessionPage() {
                 <div className="relative w-24">
                   <input
                     key={'sp' + session.id}
-                    type="number" min="0.5" step="0.5"
-                    defaultValue={(((session as any).price_super_message || 200)) / 100}
+                    type="number" min="0" step="0.5"
+                    defaultValue={((session as any).price_super_message ?? 200) / 100}
                     onBlur={e => {
                       let cents = Math.round(parseFloat(e.target.value || '0') * 100)
-                      if (isNaN(cents) || cents < 50) cents = 50
+                      if (isNaN(cents) || cents < 0) cents = 0
+                      if (cents > 0 && cents < 50) cents = 50 // min Stripe si payant
                       e.target.value = String(cents / 100)
                       updateConfig({ price_super_message: cents })
                     }}
@@ -569,6 +570,15 @@ export default function DJSessionPage() {
                   <option value="aurora">Aurore</option>
                   <option value="neon">Néon</option>
                 </select>
+              </div>
+            )}
+
+            {/* Infos affichées sur l'écran */}
+            {(session as any).display_enabled && (
+              <div className="space-y-3 pt-1 border-t border-white/5">
+                <p className="text-gray-500 text-xs">Informations affichées</p>
+                <ConfigToggle label="Nom du DJ" checked={(session as any).display_show_dj !== false} onChange={v => updateConfig({ display_show_dj: v })} />
+                <ConfigToggle label="Lieu de la soirée" checked={(session as any).display_show_venue !== false} onChange={v => updateConfig({ display_show_venue: v })} />
               </div>
             )}
 

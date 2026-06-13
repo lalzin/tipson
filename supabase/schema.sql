@@ -146,3 +146,7 @@ alter publication supabase_realtime add table messages;
 
 -- ── Seuil de toxicité (Perspective API) par session ─────────────────────────────
 alter table sessions add column if not exists toxicity_threshold integer not null default 70;
+
+-- ── Affichage configurable des infos sur l'écran ────────────────────────────────
+alter table sessions add column if not exists display_show_dj boolean not null default true;
+alter table sessions add column if not exists display_show_venue boolean not null default true;

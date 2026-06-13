@@ -142,14 +142,17 @@ export default function DisplayPage() {
 
       {/* Zone centrale (DJ + titre animés + flash de validation) */}
       <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none pr-72 text-center">
-        {session.profiles?.dj_name && (
-          <p className="dj-anim text-2xl lg:text-3xl font-bold text-purple-200 uppercase mb-3">
+        {session.display_show_dj !== false && session.profiles?.dj_name && (
+          <p className="dj-anim text-4xl lg:text-6xl font-black text-purple-200 uppercase mb-4">
             🎧 {session.profiles.dj_name}
           </p>
         )}
-        <h1 className="center-anim text-6xl lg:text-8xl font-black drop-shadow-2xl bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
+        <h1 className="center-anim text-5xl lg:text-7xl font-black drop-shadow-2xl bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
           {session.name}
         </h1>
+        {session.display_show_venue !== false && session.venue && (
+          <p className="text-2xl lg:text-3xl text-white/60 font-medium mt-3">📍 {session.venue}</p>
+        )}
         {validFlash && (
           <div className="valid-flash mt-10 px-8 py-5 rounded-3xl bg-white/10 backdrop-blur border border-white/20">
             <p className="text-pink-300 text-sm font-bold uppercase tracking-widest">🎶 Nouveau son validé</p>

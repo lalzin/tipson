@@ -34,6 +34,8 @@ export interface Session {
   price_super_message: number
   display_bg: string
   toxicity_threshold: number
+  display_show_dj: boolean
+  display_show_venue: boolean
   venue: string | null
   created_at: string
   ended_at: string | null
