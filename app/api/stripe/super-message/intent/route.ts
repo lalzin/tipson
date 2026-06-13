@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
 import { stripe, platformFee } from '@/lib/stripe'
 import { rateLimit, isValidUuid } from '@/lib/rate-limit'
-import { moderateMessage } from '@/lib/moderation'
+import { moderateMessage, criticalBlock } from '@/lib/moderation'
 import { getToxicity, toxicityMessage } from '@/lib/perspective'
 
 export const dynamic = 'force-dynamic'
@@ -29,13 +29,16 @@ export async function POST(req: NextRequest) {
   if (!session || session.status !== 'active') return NextResponse.json({ error: 'Session inactive' }, { status: 404 })
   if (!session.super_messages_enabled) return NextResponse.json({ error: 'Super-messages désactivés' }, { status: 403 })
 
-  // Modération (dictionnaire + Perspective) avant de facturer
-  const mod = moderateMessage(raw)
-  if (!mod.ok) return NextResponse.json({ error: mod.reason }, { status: 422 })
+  // Modération avant de facturer : critique → Perspective → repli dictionnaire
+  const crit = criticalBlock(raw)
+  if (!crit.ok) return NextResponse.json({ error: crit.reason }, { status: 422 })
   const threshold = (session.toxicity_threshold ?? 70) / 100
   const score = await getToxicity(raw)
-  if (score !== null && score >= threshold) {
-    return NextResponse.json({ error: toxicityMessage(score) }, { status: 422 })
+  if (score !== null) {
+    if (score >= threshold) return NextResponse.json({ error: toxicityMessage(score) }, { status: 422 })
+  } else {
+    const mod = moderateMessage(raw)
+    if (!mod.ok) return NextResponse.json({ error: mod.reason }, { status: 422 })
   }
 
   const amount = session.price_super_message ?? 200

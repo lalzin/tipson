@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
 import { rateLimit, isValidUuid } from '@/lib/rate-limit'
-import { moderateMessage } from '@/lib/moderation'
+import { moderateMessage, criticalBlock } from '@/lib/moderation'
 import { getToxicity, toxicityMessage } from '@/lib/perspective'
 
 export const dynamic = 'force-dynamic'
@@ -60,15 +60,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (raw.length > 140) return NextResponse.json({ error: 'Message trop long (140 max)' }, { status: 422 })
   if (/(https?:\/\/|www\.)/i.test(raw)) return NextResponse.json({ error: 'Les liens ne sont pas autorisés' }, { status: 422 })
 
-  // Modération : dictionnaire (argot/verlan que Perspective rate) ET Perspective.
-  // Rejet si l'un OU l'autre détecte un problème.
-  const mod = moderateMessage(raw)
-  if (!mod.ok) return NextResponse.json({ error: mod.reason }, { status: 422 })
+  // 1) Liste critique toujours active (verlan/argot + pires insultes, ~0 CPU)
+  const crit = criticalBlock(raw)
+  if (!crit.ok) return NextResponse.json({ error: crit.reason }, { status: 422 })
 
+  // 2) Perspective (TOXICITY/INSULT/PROFANITY) ; 3) repli dictionnaire si indispo
   const threshold = (session.toxicity_threshold ?? 70) / 100
   const score = await getToxicity(raw)
-  if (score !== null && score >= threshold) {
-    return NextResponse.json({ error: toxicityMessage(score), toxicity: score }, { status: 422 })
+  if (score !== null) {
+    if (score >= threshold) return NextResponse.json({ error: toxicityMessage(score), toxicity: score }, { status: 422 })
+  } else {
+    const mod = moderateMessage(raw)
+    if (!mod.ok) return NextResponse.json({ error: mod.reason }, { status: 422 })
   }
 
   const { error } = await admin.from('messages').insert({

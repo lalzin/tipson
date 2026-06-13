@@ -43,28 +43,44 @@ export interface ModerationResult {
   reason?: string
 }
 
+// Cherche une racine bannie : mot entier si ≤ 4 lettres (évite "depuis"→"dep"),
+// sinon sous-chaîne (attrape les obfuscations type "encu1e").
+function matchRoots(text: string, roots: string[]): boolean {
+  const norm = normalize(text)
+  const words = norm.split(' ').filter(Boolean)
+  const compact = norm.replace(/\s/g, '')
+  for (const root of roots) {
+    const r = normalize(root).replace(/\s/g, '')
+    if (!r) continue
+    if (r.length <= 4 ? words.includes(r) : compact.includes(r)) return true
+  }
+  return false
+}
+
+// Liste CRITIQUE toujours vérifiée (verlan/argot que Perspective rate + pires
+// insultes). Très courte → coût CPU négligeable.
+const CRITICAL_ROOTS = [
+  'guez', 'dep', 'boloss', 'bolosse', 'bolos', 'bouffon', 'cassos', 'naze', 'nase',
+  'feuj', 'renoi', 'fdp', 'ntm', 'pd', 'pede', 'negre', 'bougnoule', 'encule',
+  'connard', 'pute', 'salope', 'nique',
+]
+
+/** Vérif rapide (toujours active) sur les termes critiques. */
+export function criticalBlock(text: string): ModerationResult {
+  if (matchRoots(text, CRITICAL_ROOTS)) {
+    return { ok: false, reason: 'Message non conforme. Restons bienveillants 🙂' }
+  }
+  return { ok: true }
+}
+
+/** Modération complète par dictionnaire (utilisée en repli si Perspective indispo). */
 export function moderateMessage(text: string): ModerationResult {
   const raw = (text || '').trim()
   if (raw.length === 0) return { ok: false, reason: 'Message vide' }
   if (raw.length > 140) return { ok: false, reason: 'Message trop long (140 caractères max)' }
-
-  const norm = normalize(raw)
-  const words = norm.split(' ').filter(Boolean)
-  const compact = norm.replace(/\s/g, '')
-
-  for (const root of BANNED_ROOTS) {
-    const r = normalize(root).replace(/\s/g, '')
-    if (!r) continue
-    // Mots courts (≤ 4) : match par MOT entier (évite "depuis" → "dep").
-    // Racines plus longues : sous-chaîne (attrape les obfuscations type "encu1e").
-    const hit = r.length <= 4 ? words.includes(r) : compact.includes(r)
-    if (hit) {
-      return { ok: false, reason: 'Message non conforme. Restons bienveillants 🙂' }
-    }
+  if (matchRoots(raw, BANNED_ROOTS)) {
+    return { ok: false, reason: 'Message non conforme. Restons bienveillants 🙂' }
   }
-
-  // Anti-spam : trop d'URLs / caractères répétés
   if (/(https?:\/\/|www\.)/i.test(raw)) return { ok: false, reason: 'Les liens ne sont pas autorisés' }
-
   return { ok: true }
 }
