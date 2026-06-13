@@ -29,14 +29,13 @@ export async function POST(req: NextRequest) {
   if (!session || session.status !== 'active') return NextResponse.json({ error: 'Session inactive' }, { status: 404 })
   if (!session.super_messages_enabled) return NextResponse.json({ error: 'Super-messages désactivés' }, { status: 403 })
 
-  // Modération toxicité (Perspective) avant de facturer
+  // Modération (dictionnaire + Perspective) avant de facturer
+  const mod = moderateMessage(raw)
+  if (!mod.ok) return NextResponse.json({ error: mod.reason }, { status: 422 })
   const threshold = (session.toxicity_threshold ?? 70) / 100
   const score = await getToxicity(raw)
-  if (score !== null) {
-    if (score >= threshold) return NextResponse.json({ error: toxicityMessage(score) }, { status: 422 })
-  } else {
-    const mod = moderateMessage(raw)
-    if (!mod.ok) return NextResponse.json({ error: mod.reason }, { status: 422 })
+  if (score !== null && score >= threshold) {
+    return NextResponse.json({ error: toxicityMessage(score) }, { status: 422 })
   }
 
   const amount = session.price_super_message ?? 200
