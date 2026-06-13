@@ -143,3 +143,6 @@ alter table messages enable row level security;
 -- Lecture publique (écran d'affichage anon) ; insertions via service client (modération serveur)
 create policy "messages_public_read" on messages for select using (true);
 alter publication supabase_realtime add table messages;
+
+-- ── Seuil de toxicité (Perspective API) par session ─────────────────────────────
+alter table sessions add column if not exists toxicity_threshold integer not null default 70;

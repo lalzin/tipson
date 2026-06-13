@@ -24,6 +24,7 @@ export default function DJSessionPage() {
   const [filter, setFilter] = useState<FilterStatus>('paid')
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [showQR, setShowQR] = useState(false)
+  const [showViz, setShowViz] = useState(false)
   const [showPrices, setShowPrices] = useState(false)
   const [editNormal, setEditNormal] = useState('')
   const [editPriority, setEditPriority] = useState('')
@@ -412,63 +413,14 @@ export default function DJSessionPage() {
 
           {/* Mode visualisation (beta) — DJ uniquement */}
           {session && session.session_type !== 'karaoke' && (
-            <div className="glass rounded-2xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold flex items-center gap-1.5">📺 Visualisation</p>
+            <button onClick={() => setShowViz(true)}
+              className="w-full glass rounded-2xl p-4 flex items-center justify-between hover:bg-white/8 transition text-left">
+              <span className="text-sm font-semibold flex items-center gap-2">📺 Mode visualisation</span>
+              <span className="flex items-center gap-2">
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">beta</span>
-              </div>
-
-              <ConfigToggle label="Écran d'affichage" checked={!!(session as any).display_enabled} onChange={v => updateConfig({ display_enabled: v })} />
-              <ConfigToggle label="Messages du public" checked={!!(session as any).messages_enabled} onChange={v => updateConfig({ messages_enabled: v })} />
-              <ConfigToggle label="Super messages (payant)" checked={!!(session as any).super_messages_enabled} onChange={v => updateConfig({ super_messages_enabled: v })} />
-
-              {/* Prix du super message */}
-              {(session as any).super_messages_enabled && (
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm text-gray-300">Prix super message</span>
-                  <div className="relative w-24">
-                    <input
-                      key={session.id}
-                      type="number" min="0.5" step="0.5"
-                      defaultValue={(((session as any).price_super_message || 200)) / 100}
-                      onBlur={e => {
-                        let cents = Math.round(parseFloat(e.target.value || '0') * 100)
-                        if (isNaN(cents) || cents < 50) cents = 50
-                        e.target.value = String(cents / 100)
-                        updateConfig({ price_super_message: cents })
-                      }}
-                      className="w-full pl-3 pr-6 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-500 transition"
-                    />
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Fond animé — liste déroulante (extensible) */}
-              {(session as any).display_enabled && (
-                <div className="space-y-1.5">
-                  <label className="text-gray-500 text-xs">Animation de fond</label>
-                  <select
-                    value={(session as any).display_bg ?? 'waves'}
-                    onChange={e => updateConfig({ display_bg: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-500 transition"
-                  >
-                    <option value="waves">Vagues</option>
-                    <option value="pulse">Pulse</option>
-                    <option value="particles">Particules</option>
-                    <option value="aurora">Aurore</option>
-                    <option value="neon">Néon</option>
-                  </select>
-                </div>
-              )}
-
-              {(session as any).display_enabled && (
-                <a href={`/display/${id}`} target="_blank" rel="noopener noreferrer"
-                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-sm font-semibold transition flex items-center justify-center gap-2">
-                  Ouvrir l&apos;affichage ↗
-                </a>
-              )}
-            </div>
+                <span className="text-gray-500 text-xs">Configurer →</span>
+              </span>
+            </button>
           )}
         </aside>
 
@@ -539,6 +491,96 @@ export default function DJSessionPage() {
       </div>
 
       {showQR && session && <QRModal session={session} onClose={() => setShowQR(false)} />}
+
+      {/* Modale de configuration du mode visualisation */}
+      {showViz && session && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm px-4 pb-4 sm:pb-0 overflow-y-auto"
+          onClick={e => { if (e.target === e.currentTarget) setShowViz(false) }}>
+          <div className="w-full max-w-md bg-gray-900 border border-white/10 rounded-3xl p-6 space-y-4 max-h-[92vh] overflow-y-auto my-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold">📺 Mode visualisation</h2>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">beta</span>
+              </div>
+              <button onClick={() => setShowViz(false)} className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition">✕</button>
+            </div>
+            <p className="text-gray-500 text-xs">Affichez la soirée sur un écran et laissez le public interagir.</p>
+
+            <div className="space-y-3 pt-1">
+              <ConfigToggle label="Écran d'affichage" checked={!!(session as any).display_enabled} onChange={v => updateConfig({ display_enabled: v })} />
+              <ConfigToggle label="Messages du public" checked={!!(session as any).messages_enabled} onChange={v => updateConfig({ messages_enabled: v })} />
+              <ConfigToggle label="Super messages (payant)" checked={!!(session as any).super_messages_enabled} onChange={v => updateConfig({ super_messages_enabled: v })} />
+            </div>
+
+            {/* Prix super message */}
+            {(session as any).super_messages_enabled && (
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <span className="text-sm text-gray-300">Prix super message</span>
+                <div className="relative w-24">
+                  <input
+                    key={'sp' + session.id}
+                    type="number" min="0.5" step="0.5"
+                    defaultValue={(((session as any).price_super_message || 200)) / 100}
+                    onBlur={e => {
+                      let cents = Math.round(parseFloat(e.target.value || '0') * 100)
+                      if (isNaN(cents) || cents < 50) cents = 50
+                      e.target.value = String(cents / 100)
+                      updateConfig({ price_super_message: cents })
+                    }}
+                    className="w-full pl-3 pr-6 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-500 transition"
+                  />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
+                </div>
+              </div>
+            )}
+
+            {/* Modération des messages (Perspective) */}
+            {(session as any).messages_enabled && (
+              <div className="space-y-2 pt-1 border-t border-white/5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-300">Sévérité de la modération</span>
+                  <span className="text-xs text-gray-500">seuil {(session as any).toxicity_threshold ?? 70}%</span>
+                </div>
+                <input
+                  type="range" min="30" max="95" step="5"
+                  value={(session as any).toxicity_threshold ?? 70}
+                  onChange={e => updateConfig({ toxicity_threshold: Number(e.target.value) })}
+                  className="w-full accent-purple-500"
+                />
+                <div className="flex justify-between text-[11px] text-gray-600">
+                  <span>Strict</span><span>Permissif</span>
+                </div>
+                <p className="text-gray-600 text-[11px]">Plus le seuil est bas, plus les messages limites sont bloqués (analyse de toxicité Google Perspective).</p>
+              </div>
+            )}
+
+            {/* Fond animé */}
+            {(session as any).display_enabled && (
+              <div className="space-y-1.5 pt-1">
+                <label className="text-gray-500 text-xs">Animation de fond</label>
+                <select
+                  value={(session as any).display_bg ?? 'waves'}
+                  onChange={e => updateConfig({ display_bg: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-500 transition"
+                >
+                  <option value="waves">Vagues</option>
+                  <option value="pulse">Pulse</option>
+                  <option value="particles">Particules</option>
+                  <option value="aurora">Aurore</option>
+                  <option value="neon">Néon</option>
+                </select>
+              </div>
+            )}
+
+            {(session as any).display_enabled && (
+              <a href={`/display/${id}`} target="_blank" rel="noopener noreferrer"
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-sm font-semibold transition flex items-center justify-center gap-2">
+                Ouvrir l&apos;affichage ↗
+              </a>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modal prix */}
       {showPrices && (

@@ -33,6 +33,7 @@ export interface Session {
   super_messages_enabled: boolean
   price_super_message: number
   display_bg: string
+  toxicity_threshold: number
   venue: string | null
   created_at: string
   ended_at: string | null

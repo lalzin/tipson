@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
 import { rateLimit, isValidUuid } from '@/lib/rate-limit'
 import { moderateMessage } from '@/lib/moderation'
+import { getToxicity, toxicityMessage } from '@/lib/perspective'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const admin = createServiceSupabaseClient()
   const { data: session } = await admin
     .from('sessions')
-    .select('id, status, messages_enabled')
+    .select('id, status, messages_enabled, toxicity_threshold')
     .eq('id', params.id)
     .single()
 
@@ -44,12 +45,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Les messages ne sont pas activés pour cette soirée' }, { status: 403 })
   }
 
-  const mod = moderateMessage(text)
-  if (!mod.ok) return NextResponse.json({ error: mod.reason }, { status: 422 })
+  const raw = String(text || '').trim()
+  if (!raw) return NextResponse.json({ error: 'Message vide' }, { status: 422 })
+  if (raw.length > 140) return NextResponse.json({ error: 'Message trop long (140 max)' }, { status: 422 })
+  if (/(https?:\/\/|www\.)/i.test(raw)) return NextResponse.json({ error: 'Les liens ne sont pas autorisés' }, { status: 422 })
+
+  // Modération : Perspective API (toxicité), repli sur le dictionnaire si indispo
+  const threshold = (session.toxicity_threshold ?? 70) / 100
+  const score = await getToxicity(raw)
+  if (score !== null) {
+    if (score >= threshold) return NextResponse.json({ error: toxicityMessage(score), toxicity: score }, { status: 422 })
+  } else {
+    const mod = moderateMessage(raw)
+    if (!mod.ok) return NextResponse.json({ error: mod.reason }, { status: 422 })
+  }
 
   const { error } = await admin.from('messages').insert({
     session_id: params.id,
-    text: String(text).trim(),
+    text: raw,
     author_name: author_name ? String(author_name).slice(0, 40) : null,
     is_super: false,
     amount: 0,

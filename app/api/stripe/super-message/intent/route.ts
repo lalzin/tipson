@@ -3,6 +3,7 @@ import { createServiceSupabaseClient } from '@/lib/supabase-server'
 import { stripe, platformFee } from '@/lib/stripe'
 import { rateLimit, isValidUuid } from '@/lib/rate-limit'
 import { moderateMessage } from '@/lib/moderation'
+import { getToxicity, toxicityMessage } from '@/lib/perspective'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,18 +16,28 @@ export async function POST(req: NextRequest) {
   const { session_id, text, author_name } = await req.json()
   if (!isValidUuid(session_id)) return NextResponse.json({ error: 'Session invalide' }, { status: 400 })
 
-  const mod = moderateMessage(text)
-  if (!mod.ok) return NextResponse.json({ error: mod.reason }, { status: 422 })
+  const raw = String(text || '').trim()
+  if (!raw || raw.length > 140) return NextResponse.json({ error: 'Message invalide' }, { status: 422 })
 
   const admin = createServiceSupabaseClient()
   const { data: session } = await admin
     .from('sessions')
-    .select('id, status, super_messages_enabled, price_super_message, dj_id')
+    .select('id, status, super_messages_enabled, price_super_message, dj_id, toxicity_threshold')
     .eq('id', session_id)
     .single()
 
   if (!session || session.status !== 'active') return NextResponse.json({ error: 'Session inactive' }, { status: 404 })
   if (!session.super_messages_enabled) return NextResponse.json({ error: 'Super-messages désactivés' }, { status: 403 })
+
+  // Modération toxicité (Perspective) avant de facturer
+  const threshold = (session.toxicity_threshold ?? 70) / 100
+  const score = await getToxicity(raw)
+  if (score !== null) {
+    if (score >= threshold) return NextResponse.json({ error: toxicityMessage(score) }, { status: 422 })
+  } else {
+    const mod = moderateMessage(raw)
+    if (!mod.ok) return NextResponse.json({ error: mod.reason }, { status: 422 })
+  }
 
   const amount = session.price_super_message ?? 200
   if (amount < 50) return NextResponse.json({ error: 'Montant invalide' }, { status: 400 })
@@ -44,7 +55,7 @@ export async function POST(req: NextRequest) {
     metadata: {
       kind: 'super_message',
       session_id,
-      text: String(text).trim().slice(0, 140),
+      text: raw.slice(0, 140),
       author_name: author_name ? String(author_name).slice(0, 40) : '',
     },
     ...(destination ? { transfer_data: { destination }, application_fee_amount: platformFee(amount) } : {}),
