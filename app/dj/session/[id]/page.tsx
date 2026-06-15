@@ -167,6 +167,12 @@ export default function DJSessionPage() {
     } catch {}
   }
 
+  // Ouvre l'écran d'affichage et l'active s'il ne l'était pas
+  function openDisplay() {
+    if (session && !(session as any).display_enabled) updateConfig({ display_enabled: true })
+    window.open(`/display/${id}`, '_blank', 'noopener')
+  }
+
   async function updateRequest(reqId: string, status: string) {
     const res = await fetch(`/api/requests/${reqId}`, {
       method: 'PATCH',
@@ -515,6 +521,15 @@ export default function DJSessionPage() {
             <span className="text-sm font-semibold flex items-center gap-2">⚙️ Configurer la soirée</span>
             <span className="text-gray-500 text-xs">Ouvrir →</span>
           </button>
+
+          {/* Ouvrir l'affichage (active le mode visualisation au passage) — sauf karaoké */}
+          {session && session.session_type !== 'karaoke' && (
+            <button onClick={openDisplay}
+              className="w-full rounded-2xl p-4 flex items-center justify-between transition text-left bg-gradient-to-r from-purple-600/20 to-pink-600/15 border border-purple-500/30 hover:from-purple-600/30 hover:to-pink-600/25">
+              <span className="text-sm font-semibold flex items-center gap-2">📺 Ouvrir l&apos;affichage</span>
+              <span className="text-purple-300 text-xs flex items-center gap-1">Plein écran ↗</span>
+            </button>
+          )}
 
           {/* Statistiques de la soirée */}
           <button onClick={() => setShowStats(true)}
