@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase'
 import {
   ArrowLeft, Check, X, Play, Clock, Zap,
   Music2, Loader2, Euro, ListMusic, Bell, BellOff,
-  ChevronDown, Pause, StopCircle, Share2, Users, Download, Mic2, RotateCcw
+  ChevronDown, ChevronRight, Pause, StopCircle, Share2, Users, Download, Mic2, RotateCcw
 } from 'lucide-react'
 import type { Request, Session } from '@/types'
 import { cn, formatPrice } from '@/lib/utils'
@@ -24,7 +24,7 @@ export default function DJSessionPage() {
   const [session, setSession] = useState<Session | null>(null)
   const [requests, setRequests] = useState<Request[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<FilterStatus>('paid')
+  const [showHistory, setShowHistory] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [showQR, setShowQR] = useState(false)
   const [showViz, setShowViz] = useState(false)
@@ -217,9 +217,13 @@ export default function DJSessionPage() {
     }
   }
 
-  const filteredRequests = requests.filter(r =>
-    filter === 'all' ? r.status !== 'pending_payment' : r.status === filter
-  )
+  // Vue en colonnes : à valider / à jouer / historique (premium d'abord)
+  const rankReq = (r: Request) => r.request_type === 'blacklist' ? 0 : r.request_type === 'priority' ? 1 : 2
+  const sortQueue = (a: Request, b: Request) => rankReq(a) - rankReq(b) || (new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const toValidate = requests.filter(r => r.status === 'paid').sort(sortQueue)
+  const toPlay = requests.filter(r => r.status === 'approved').sort(sortQueue)
+  const history = requests.filter(r => ['played', 'rejected'].includes(r.status))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   const paidRequests = requests.filter(r => ['paid', 'approved', 'played'].includes(r.status))
   const totalRevenue = paidRequests.reduce((sum, r) => sum + r.amount, 0)
@@ -352,9 +356,6 @@ export default function DJSessionPage() {
                 </p>
                 <p className="text-purple-400/60 text-xs">Validez rapidement</p>
               </div>
-              <button onClick={() => setFilter('paid')} className="text-purple-300 text-xs font-medium hover:text-white transition flex-shrink-0">
-                Voir →
-              </button>
             </div>
           )}
 
@@ -447,67 +448,81 @@ export default function DJSessionPage() {
           )}
         </aside>
 
-        {/* ── COLONNE DROITE : LISTE DES DEMANDES ── */}
-        <div className="mt-5 lg:mt-0 space-y-4">
-          {/* Filtres — uniquement en mode DJ */}
-          <div className={cn('flex gap-2 overflow-x-auto pb-1 scrollbar-hide', session?.session_type === 'karaoke' && 'hidden')}>
-            {(['paid', 'approved', 'played', 'rejected', 'all'] as FilterStatus[]).map(f => {
-              const labels: Record<FilterStatus, string> = {
-                paid: '⏳ À valider',
-                approved: '✓ Validées',
-                played: '▶ Jouées',
-                rejected: '✗ Refusées',
-                all: 'Toutes',
-              }
-              const count = filterCounts[f]
-              return (
-                <button key={f} onClick={() => setFilter(f)}
-                  className={cn(
-                    'flex-shrink-0 px-3 py-1.5 rounded-xl text-sm font-medium transition flex items-center gap-1.5 whitespace-nowrap',
-                    filter === f ? 'bg-purple-600 text-white' : 'glass text-gray-400 hover:text-white'
-                  )}>
-                  {labels[f]}
-                  {count > 0 && (
-                    <span className={cn('text-xs px-1.5 py-0.5 rounded-full min-w-[18px] text-center', filter === f ? 'bg-white/20' : 'bg-white/10')}>
-                      {count}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-
+        {/* ── COLONNE DROITE : DEMANDES ── */}
+        <div className="mt-5 lg:mt-0 pb-12">
           {/* Mode karaoké : queue */}
           {session?.session_type === 'karaoke' ? (
-            <div className="pb-12">
-              <KaraokeQueue
-                requests={requests.filter(r => r.status !== 'pending_payment')}
-                onCall={id => updateRequest(id, 'approved')}
-                onDone={id => updateRequest(id, 'played')}
-                onSkip={id => updateRequest(id, 'rejected')}
-                onPrioritize={prioritizeRequest}
-              />
-            </div>
+            <KaraokeQueue
+              requests={requests.filter(r => r.status !== 'pending_payment')}
+              onCall={id => updateRequest(id, 'approved')}
+              onDone={id => updateRequest(id, 'played')}
+              onSkip={id => updateRequest(id, 'rejected')}
+              onPrioritize={prioritizeRequest}
+            />
           ) : (
-            /* Grille de demandes DJ — 1 col mobile, 2 col grand desktop */
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 pb-12">
-              {filteredRequests.length === 0 && (
-                <div className="xl:col-span-2 text-center py-20 text-gray-600 space-y-2">
-                  <Music2 className="w-10 h-10 mx-auto opacity-20" />
-                  <p className="text-sm">
-                    {filter === 'paid' ? 'Aucune demande en attente' : 'Aucune demande dans cette catégorie'}
-                  </p>
-                </div>
+            /* Vue DJ : 2 colonnes visibles en même temps (à valider | à jouer) */
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                {/* À valider */}
+                <section className="space-y-3">
+                  <h3 className="text-sm uppercase tracking-widest font-bold flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />
+                    À valider <span className="text-gray-500 font-normal">({toValidate.length})</span>
+                  </h3>
+                  {toValidate.length === 0 ? (
+                    <div className="glass rounded-2xl py-10 text-center text-gray-600 text-sm">Aucune demande en attente</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {toValidate.map(req => (
+                        <RequestCard key={req.id} request={req}
+                          onApprove={() => updateRequest(req.id, 'approved')}
+                          onReject={() => updateRequest(req.id, 'rejected')}
+                          onPlayed={() => updateRequest(req.id, 'played')} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                {/* À jouer */}
+                <section className="space-y-3">
+                  <h3 className="text-sm uppercase tracking-widest font-bold flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block" />
+                    À jouer <span className="text-gray-500 font-normal">({toPlay.length})</span>
+                  </h3>
+                  {toPlay.length === 0 ? (
+                    <div className="glass rounded-2xl py-10 text-center text-gray-600 text-sm">Rien à jouer pour l&apos;instant</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {toPlay.map(req => (
+                        <RequestCard key={req.id} request={req}
+                          onApprove={() => updateRequest(req.id, 'approved')}
+                          onReject={() => updateRequest(req.id, 'rejected')}
+                          onPlayed={() => updateRequest(req.id, 'played')} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
+
+              {/* Historique (repliable) */}
+              {history.length > 0 && (
+                <section className="space-y-2">
+                  <button onClick={() => setShowHistory(v => !v)}
+                    className="text-xs uppercase tracking-widest font-bold text-gray-500 hover:text-gray-300 transition flex items-center gap-2">
+                    Historique ({history.length}) {showHistory ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                  </button>
+                  {showHistory && (
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                      {history.map(req => (
+                        <RequestCard key={req.id} request={req}
+                          onApprove={() => updateRequest(req.id, 'approved')}
+                          onReject={() => updateRequest(req.id, 'rejected')}
+                          onPlayed={() => updateRequest(req.id, 'played')} />
+                      ))}
+                    </div>
+                  )}
+                </section>
               )}
-              {filteredRequests.map(req => (
-                <RequestCard
-                  key={req.id}
-                  request={req}
-                  onApprove={() => updateRequest(req.id, 'approved')}
-                  onReject={() => updateRequest(req.id, 'rejected')}
-                  onPlayed={() => updateRequest(req.id, 'played')}
-                />
-              ))}
             </div>
           )}
         </div>
