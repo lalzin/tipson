@@ -192,3 +192,18 @@ alter table sessions add column if not exists display_theme text not null defaul
 alter table sessions add column if not exists display_color1 text;
 alter table sessions add column if not exists display_color2 text;
 alter table sessions add column if not exists display_emojis text;
+
+-- ── Mode Jukebox (proxy vers la file Spotify de l'établissement) ─────────────────
+alter table sessions drop constraint if exists sessions_session_type_check;
+alter table sessions add constraint sessions_session_type_check
+  check (session_type in ('dj', 'karaoke', 'jukebox'));
+
+alter table requests drop constraint if exists requests_request_type_check;
+alter table requests add constraint requests_request_type_check
+  check (request_type in ('normal', 'priority', 'karaoke', 'blacklist', 'jukebox'));
+
+-- Connexion Spotify de l'organisateur (OAuth)
+alter table profiles add column if not exists spotify_refresh_token text;
+alter table profiles add column if not exists spotify_access_token text;
+alter table profiles add column if not exists spotify_expires_at timestamptz;
+alter table profiles add column if not exists spotify_user_id text;

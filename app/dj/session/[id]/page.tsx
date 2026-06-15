@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase'
 import {
   ArrowLeft, Check, X, Play, Clock, Zap,
   Music2, Loader2, Euro, ListMusic, Bell, BellOff,
-  ChevronDown, ChevronRight, Pause, StopCircle, Share2, Users, Download, Mic2, RotateCcw
+  ChevronDown, ChevronRight, Pause, StopCircle, Share2, Users, Download, Mic2, RotateCcw, Disc3
 } from 'lucide-react'
 import type { Request, Session } from '@/types'
 import { cn, formatPrice } from '@/lib/utils'
@@ -14,6 +14,7 @@ import KaraokeQueue from '@/components/dj/KaraokeQueue'
 import MusicLinks from '@/components/dj/MusicLinks'
 import BlacklistModal from '@/components/dj/BlacklistModal'
 import PromoCodesModal from '@/components/dj/PromoCodesModal'
+import JukeboxBridge from '@/components/dj/JukeboxBridge'
 import { DISPLAY_THEMES, EMOJI_PALETTE, displayEmojis, BG_OPTIONS } from '@/lib/displayThemes'
 
 type FilterStatus = 'paid' | 'approved' | 'played' | 'rejected' | 'all'
@@ -263,10 +264,14 @@ export default function DJSessionPage() {
               <div className={cn('hidden lg:flex w-10 h-10 rounded-2xl items-center justify-center',
                 session?.session_type === 'karaoke'
                   ? 'bg-pink-600/20 border border-pink-500/30'
+                  : session?.session_type === 'jukebox'
+                  ? 'bg-emerald-600/20 border border-emerald-500/30'
                   : 'bg-purple-600/20 border border-purple-500/30'
               )}>
                 {session?.session_type === 'karaoke'
                   ? <Mic2 className="w-5 h-5 text-pink-400" />
+                  : session?.session_type === 'jukebox'
+                  ? <Disc3 className="w-5 h-5 text-emerald-400" />
                   : <span className="text-purple-300 font-black text-base">T</span>}
               </div>
               <div>
@@ -367,7 +372,8 @@ export default function DJSessionPage() {
             <StatMini value={String(filterCounts.played)} label="Jouées" color="gray" />
           </div>
 
-          {/* Prix */}
+          {/* Prix — pas pour le jukebox (gratuit) */}
+          {session?.session_type !== 'jukebox' && (
           <button onClick={openPrices}
             className="w-full glass rounded-2xl px-4 py-3 flex items-center justify-between hover:bg-white/5 transition">
             <div className="flex items-center gap-2 text-sm flex-wrap">
@@ -379,6 +385,7 @@ export default function DJSessionPage() {
             </div>
             <span className="text-gray-600 text-xs flex-shrink-0 ml-2">Modifier →</span>
           </button>
+          )}
 
           {/* Contrôles session — mobile seulement */}
           <div className="flex gap-2 lg:hidden">
@@ -428,12 +435,14 @@ export default function DJSessionPage() {
             </button>
           )}
 
-          {/* Codes promo */}
+          {/* Codes promo — pas pour le jukebox (gratuit) */}
+          {session?.session_type !== 'jukebox' && (
           <button onClick={() => setShowPromo(true)}
             className="w-full glass rounded-2xl p-4 flex items-center justify-between hover:bg-white/8 transition text-left">
             <span className="text-sm font-semibold flex items-center gap-2">🎟️ Codes promo</span>
             <span className="text-gray-500 text-xs">Gérer →</span>
           </button>
+          )}
 
           {/* Mode visualisation (beta) — DJ uniquement */}
           {session && session.session_type !== 'karaoke' && (
@@ -450,8 +459,10 @@ export default function DJSessionPage() {
 
         {/* ── COLONNE DROITE : DEMANDES ── */}
         <div className="mt-5 lg:mt-0 pb-12">
-          {/* Mode karaoké : queue */}
-          {session?.session_type === 'karaoke' ? (
+          {/* Mode jukebox : pont MusicKit + file */}
+          {session?.session_type === 'jukebox' ? (
+            <JukeboxBridge sessionId={id} requests={requests} />
+          ) : session?.session_type === 'karaoke' ? (
             <KaraokeQueue
               requests={requests.filter(r => r.status !== 'pending_payment')}
               onCall={id => updateRequest(id, 'approved')}

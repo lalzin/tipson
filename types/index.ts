@@ -1,6 +1,6 @@
 export type SessionStatus = 'active' | 'paused' | 'ended'
-export type SessionType = 'dj' | 'karaoke'
-export type RequestType = 'normal' | 'priority' | 'karaoke' | 'blacklist'
+export type SessionType = 'dj' | 'karaoke' | 'jukebox'
+export type RequestType = 'normal' | 'priority' | 'karaoke' | 'blacklist' | 'jukebox'
 export type RequestStatus = 'pending_payment' | 'paid' | 'approved' | 'rejected' | 'played'
 
 export interface Profile {

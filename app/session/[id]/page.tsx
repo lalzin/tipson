@@ -13,6 +13,7 @@ import { cn, formatPrice } from '@/lib/utils'
 import dynamic from 'next/dynamic'
 import AuthGate from '@/components/customer/AuthGate'
 import KaraokeView from '@/components/customer/KaraokeView'
+import JukeboxView from '@/components/customer/JukeboxView'
 import InteractionBar from '@/components/customer/InteractionBar'
 import { Flame } from 'lucide-react'
 import { displayEmojis } from '@/lib/displayThemes'
@@ -342,6 +343,11 @@ export default function SessionPage() {
   }
 
   const isInactive = session.status !== 'active'
+
+  // ─── JUKEBOX : ajout libre à la file (pas d'auth, pas de paiement) ───
+  if (session.session_type === 'jukebox') {
+    return <JukeboxView session={session} sessionId={id} />
+  }
 
   // ─── KARAOKÉ : délègue toujours à KaraokeView (gère lui-même pause/fin + file) ───
   if (session.session_type === 'karaoke') {
