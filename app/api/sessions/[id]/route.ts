@@ -83,6 +83,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (body.toxicity_threshold !== undefined) updates.toxicity_threshold = Math.max(10, Math.min(100, Number(body.toxicity_threshold)))
   if (body.display_show_dj !== undefined) updates.display_show_dj = !!body.display_show_dj
   if (body.display_show_venue !== undefined) updates.display_show_venue = !!body.display_show_venue
+  if (body.price_blacklist !== undefined) updates.price_blacklist = body.price_blacklist
   if (body.name !== undefined) updates.name = body.name
 
   // Update via service client → bypasse les subtilités RLS (RETURNING filtré quand status != active)

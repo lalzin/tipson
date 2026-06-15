@@ -150,3 +150,25 @@ alter table sessions add column if not exists toxicity_threshold integer not nul
 -- ── Affichage configurable des infos sur l'écran ────────────────────────────────
 alter table sessions add column if not exists display_show_dj boolean not null default true;
 alter table sessions add column if not exists display_show_venue boolean not null default true;
+
+-- ── Liste noire de morceaux (prix premium) ──────────────────────────────────────
+alter table sessions add column if not exists price_blacklist integer not null default 1000; -- 10€
+
+create table if not exists blacklist_tracks (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid references sessions(id) on delete cascade not null,
+  itunes_id text not null,
+  name text not null,
+  artist text not null,
+  image text,
+  created_at timestamptz default now(),
+  unique (session_id, itunes_id)
+);
+create index if not exists blacklist_session_idx on blacklist_tracks(session_id);
+alter table blacklist_tracks enable row level security;
+create policy "blacklist_public_read" on blacklist_tracks for select using (true);
+
+-- request_type : ajout de 'blacklist'
+alter table requests drop constraint if exists requests_request_type_check;
+alter table requests add constraint requests_request_type_check
+  check (request_type in ('normal', 'priority', 'karaoke', 'blacklist'));

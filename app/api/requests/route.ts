@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   // Vérifie que la session est active et récupère le type + prix
   const { data: session, error: sessionError } = await supabase
     .from('sessions')
-    .select('id, status, session_type, price_normal, price_priority, price_karaoke, price_karaoke_priority')
+    .select('id, status, session_type, price_normal, price_priority, price_karaoke, price_karaoke_priority, price_blacklist')
     .eq('id', session_id)
     .eq('status', 'active')
     .single()
@@ -86,8 +86,27 @@ export async function POST(req: NextRequest) {
       queuePosition = (count ?? 0) + 1
     }
   } else {
-    finalRequestType = request_type ?? 'normal'
-    amount = finalRequestType === 'priority' ? session.price_priority : session.price_normal
+    // Liste noire : si le morceau y est, on force le type + prix premium
+    // (impossible de contourner en demandant 'normal' moins cher).
+    let blacklisted = false
+    if (body.itunes_id) {
+      const admin = createServiceSupabaseClient()
+      const { data: bl } = await admin
+        .from('blacklist_tracks')
+        .select('id')
+        .eq('session_id', session_id)
+        .eq('itunes_id', String(body.itunes_id))
+        .maybeSingle()
+      blacklisted = !!bl
+    }
+
+    if (blacklisted) {
+      finalRequestType = 'blacklist'
+      amount = session.price_blacklist ?? 1000
+    } else {
+      finalRequestType = request_type === 'priority' ? 'priority' : 'normal'
+      amount = finalRequestType === 'priority' ? session.price_priority : session.price_normal
+    }
   }
 
   const { data, error } = await supabase

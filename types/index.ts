@@ -1,6 +1,6 @@
 export type SessionStatus = 'active' | 'paused' | 'ended'
 export type SessionType = 'dj' | 'karaoke'
-export type RequestType = 'normal' | 'priority' | 'karaoke'
+export type RequestType = 'normal' | 'priority' | 'karaoke' | 'blacklist'
 export type RequestStatus = 'pending_payment' | 'paid' | 'approved' | 'rejected' | 'played'
 
 export interface Profile {
@@ -36,6 +36,7 @@ export interface Session {
   toxicity_threshold: number
   display_show_dj: boolean
   display_show_venue: boolean
+  price_blacklist: number
   venue: string | null
   created_at: string
   ended_at: string | null
@@ -80,6 +81,14 @@ export interface MusicLinks {
   deezer?: string
   appleMusic?: string
   youtube?: string
+}
+
+export interface BlacklistTrack {
+  id: string
+  itunes_id: string
+  name: string
+  artist: string
+  image: string | null
 }
 
 export interface SearchTrack {

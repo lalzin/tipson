@@ -12,6 +12,7 @@ import { cn, formatPrice } from '@/lib/utils'
 import QRModal from '@/components/dj/QRModal'
 import KaraokeQueue from '@/components/dj/KaraokeQueue'
 import MusicLinks from '@/components/dj/MusicLinks'
+import BlacklistModal from '@/components/dj/BlacklistModal'
 
 type FilterStatus = 'paid' | 'approved' | 'played' | 'rejected' | 'all'
 
@@ -25,6 +26,7 @@ export default function DJSessionPage() {
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [showQR, setShowQR] = useState(false)
   const [showViz, setShowViz] = useState(false)
+  const [showBlacklist, setShowBlacklist] = useState(false)
   const [showPrices, setShowPrices] = useState(false)
   const [editNormal, setEditNormal] = useState('')
   const [editPriority, setEditPriority] = useState('')
@@ -411,6 +413,15 @@ export default function DJSessionPage() {
             </button>
           </div>
 
+          {/* Liste noire — DJ uniquement */}
+          {session && session.session_type !== 'karaoke' && (
+            <button onClick={() => setShowBlacklist(true)}
+              className="w-full glass rounded-2xl p-4 flex items-center justify-between hover:bg-white/8 transition text-left">
+              <span className="text-sm font-semibold flex items-center gap-2">🔥 Liste noire</span>
+              <span className="text-gray-500 text-xs">Configurer →</span>
+            </button>
+          )}
+
           {/* Mode visualisation (beta) — DJ uniquement */}
           {session && session.session_type !== 'karaoke' && (
             <button onClick={() => setShowViz(true)}
@@ -491,6 +502,15 @@ export default function DJSessionPage() {
       </div>
 
       {showQR && session && <QRModal session={session} onClose={() => setShowQR(false)} />}
+
+      {showBlacklist && session && (
+        <BlacklistModal
+          sessionId={session.id}
+          price={(session as any).price_blacklist ?? 1000}
+          onPriceChange={cents => updateConfig({ price_blacklist: cents })}
+          onClose={() => setShowBlacklist(false)}
+        />
+      )}
 
       {/* Modale de configuration du mode visualisation */}
       {showViz && session && (
@@ -748,6 +768,7 @@ function RequestCard({ request, onApprove, onReject, onPlayed }: {
   const isPending = request.status === 'paid'
   const isApproved = request.status === 'approved'
   const isPriority = request.request_type === 'priority'
+  const isBlacklist = request.request_type === 'blacklist'
 
   const timeAgo = (() => {
     const diff = Date.now() - new Date(request.created_at).getTime()
@@ -783,9 +804,9 @@ function RequestCard({ request, onApprove, onReject, onPlayed }: {
             <div className="flex flex-col items-end gap-1 flex-shrink-0">
               <span className={cn(
                 'text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1',
-                isPriority ? 'bg-purple-500/25 text-purple-200' : 'bg-blue-500/20 text-blue-300'
+                isBlacklist ? 'bg-red-500/25 text-red-200' : isPriority ? 'bg-purple-500/25 text-purple-200' : 'bg-blue-500/20 text-blue-300'
               )}>
-                {isPriority ? <><Zap className="w-3 h-3" /> MAINTENANT</> : <><Clock className="w-3 h-3" /> PLAYLIST</>}
+                {isBlacklist ? <>🔥 INTERDIT</> : isPriority ? <><Zap className="w-3 h-3" /> MAINTENANT</> : <><Clock className="w-3 h-3" /> PLAYLIST</>}
               </span>
               <span className="text-green-300 font-black text-sm">{formatPrice(request.amount)}</span>
             </div>

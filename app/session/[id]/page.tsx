@@ -35,7 +35,8 @@ export default function SessionPage() {
   const [tracks, setTracks] = useState<SearchTrack[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
   const [selectedTrack, setSelectedTrack] = useState<SearchTrack | null>(null)
-  const [requestType, setRequestType] = useState<'normal' | 'priority'>('normal')
+  const [requestType, setRequestType] = useState<'normal' | 'priority' | 'blacklist'>('normal')
+  const [blacklistIds, setBlacklistIds] = useState<Set<string>>(new Set())
   const [customerName, setCustomerName] = useState('')
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -63,6 +64,14 @@ export default function SessionPage() {
       setCancelling(false)
     }
   }
+
+  // Liste noire de la session (pour appliquer le prix premium côté client)
+  useEffect(() => {
+    fetch(`/api/sessions/${id}/blacklist`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.tracks) setBlacklistIds(new Set(d.tracks.map((t: any) => String(t.itunes_id)))) })
+      .catch(() => {})
+  }, [id])
 
   useEffect(() => {
     const supabase = createClient()
@@ -217,6 +226,7 @@ export default function SessionPage() {
           spotify_uri: null,
           album_image: selectedTrack.image,
           itunes_url: selectedTrack.url,
+          itunes_id: selectedTrack.id,
           customer_email: user?.email ?? null,
           customer_user_id: user?.id ?? null,
           request_type: requestType,
@@ -376,7 +386,8 @@ export default function SessionPage() {
     )
   }
 
-  const amount = requestType === 'priority' ? session.price_priority : session.price_normal
+  const amount = requestType === 'blacklist' ? (session.price_blacklist ?? 1000)
+    : requestType === 'priority' ? session.price_priority : session.price_normal
   const amountEur = formatPrice(amount)
 
   // ─── TRACKING ─────────────────────────────────────────────────────
@@ -606,7 +617,9 @@ export default function SessionPage() {
           <div>
             <h2 className="text-2xl font-bold">Votre demande</h2>
             <p className="text-gray-400 text-sm mt-1">
-              {requestType === 'priority'
+              {requestType === 'blacklist'
+                ? <span>🔥 <strong className="text-white">Morceau interdit</strong> · <span className="text-red-300">{amountEur}</span></span>
+                : requestType === 'priority'
                 ? <span>⚡ <strong className="text-white">La chanson maintenant</strong> · <span className="text-purple-300">{amountEur}</span></span>
                 : <span>🎵 <strong className="text-white">Dans la playlist</strong> · <span className="text-blue-300">{amountEur}</span></span>
               }
@@ -668,6 +681,7 @@ export default function SessionPage() {
 
   // ─── SELECT OPTION ────────────────────────────────────────────────
   if (step === 'select-option') {
+    const isBlacklisted = !!selectedTrack && blacklistIds.has(String(selectedTrack.id))
     return (
       <main className="min-h-screen flex flex-col px-6 pt-12 pb-8 bg-gradient-to-b from-gray-950 via-purple-950/10 to-gray-950">
         <button onClick={() => setStep('search')} className="flex items-center gap-1 text-gray-400 hover:text-white mb-8 transition text-sm">
@@ -675,8 +689,10 @@ export default function SessionPage() {
         </button>
         <div className="flex-1 flex flex-col space-y-6 max-w-md mx-auto w-full">
           <div>
-            <h2 className="text-2xl font-bold">Choisissez votre option</h2>
-            <p className="text-gray-400 text-sm mt-1">Quand voulez-vous entendre votre son ?</p>
+            <h2 className="text-2xl font-bold">{isBlacklisted ? 'Morceau interdit 🔥' : 'Choisissez votre option'}</h2>
+            <p className="text-gray-400 text-sm mt-1">
+              {isBlacklisted ? 'Ce morceau est dans la liste noire du DJ.' : 'Quand voulez-vous entendre votre son ?'}
+            </p>
           </div>
 
           {selectedTrack && (
@@ -691,6 +707,32 @@ export default function SessionPage() {
             </div>
           )}
 
+          {isBlacklisted ? (
+            <div className="space-y-3">
+              <button
+                onClick={() => { setRequestType('blacklist'); setStep('form') }}
+                className="w-full rounded-2xl p-5 text-left transition active:scale-[0.98] group relative overflow-hidden border border-red-500/40 hover:border-red-400/60"
+                style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(249,115,22,0.10) 100%)' }}
+              >
+                <div className="absolute top-0 right-0 bg-gradient-to-l from-red-600 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">
+                  LISTE NOIRE
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex gap-4 items-center">
+                    <div className="w-12 h-12 rounded-2xl bg-red-500/20 border border-red-500/30 flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">🔥</span>
+                    </div>
+                    <div>
+                      <p className="font-bold text-base">Le faire passer quand même</p>
+                      <p className="text-gray-400 text-sm mt-0.5">Tarif spécial morceau interdit</p>
+                    </div>
+                  </div>
+                  <p className="font-black text-2xl text-red-300 flex-shrink-0">{formatPrice(session.price_blacklist ?? 1000)}</p>
+                </div>
+              </button>
+              <p className="text-center text-gray-600 text-xs">Le DJ reste libre d&apos;accepter ou non. Débité seulement s&apos;il accepte.</p>
+            </div>
+          ) : (
           <div className="space-y-3">
             {/* Option normale — 1€ */}
             <button
@@ -742,6 +784,7 @@ export default function SessionPage() {
             </button>
             )}
           </div>
+          )}
 
           <p className="text-center text-gray-600 text-xs">
             Paiement sécurisé par Stripe · débité seulement si le DJ accepte
@@ -828,9 +871,14 @@ export default function SessionPage() {
                 key={track.id}
                 onClick={() => {
                   setSelectedTrack(track)
-                  // Si l'option express est désactivée, pas de choix → demande normale directe
-                  if (session.express_enabled === false) { setRequestType('normal'); setStep('form') }
-                  else setStep('select-option')
+                  if (blacklistIds.has(String(track.id))) {
+                    // Morceau en liste noire → prix premium imposé
+                    setRequestType('blacklist'); setStep('select-option')
+                  } else if (session.express_enabled === false) {
+                    setRequestType('normal'); setStep('form')
+                  } else {
+                    setStep('select-option')
+                  }
                 }}
                 className="w-full glass rounded-2xl p-3 flex gap-3 items-center hover:bg-white/8 active:scale-[0.98] transition text-left group"
               >
