@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import {
   ArrowLeft, Check, X, Play, Clock, Zap,
-  Music2, Loader2, Euro, ListMusic, Bell, BellOff,
+  Music2, Loader2, Euro, ListMusic, Bell, BellOff, Volume2, VolumeX,
   ChevronDown, ChevronRight, Pause, StopCircle, Share2, Users, Download, Mic2, RotateCcw, Disc3
 } from 'lucide-react'
 import type { Request, Session } from '@/types'
@@ -27,6 +27,7 @@ export default function DJSessionPage() {
   const [loading, setLoading] = useState(true)
   const [showHistory, setShowHistory] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(true)
+  const [notifEnabled, setNotifEnabled] = useState(false)
   const [showQR, setShowQR] = useState(false)
   const [showViz, setShowViz] = useState(false)
   const [showBlacklist, setShowBlacklist] = useState(false)
@@ -40,8 +41,56 @@ export default function DJSessionPage() {
   const [participants, setParticipants] = useState<{ email: string | null; name: string | null; anonymous: boolean }[]>([])
   const [loadingParticipants, setLoadingParticipants] = useState(false)
   const soundRef = useRef<boolean>(true)
+  const notifRef = useRef<boolean>(false)
 
   useEffect(() => { soundRef.current = soundEnabled }, [soundEnabled])
+  useEffect(() => { notifRef.current = notifEnabled }, [notifEnabled])
+
+  // Restaure les préférences (son / notifications navigateur)
+  useEffect(() => {
+    const s = localStorage.getItem('tipson-dj-sound')
+    if (s !== null) setSoundEnabled(s === '1')
+    const n = localStorage.getItem('tipson-dj-notif')
+    if (n === '1' && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      setNotifEnabled(true)
+    }
+  }, [])
+
+  function toggleSound() {
+    setSoundEnabled(s => { const v = !s; localStorage.setItem('tipson-dj-sound', v ? '1' : '0'); return v })
+  }
+
+  // Active/désactive les notifications navigateur (demande la permission au besoin)
+  async function toggleNotif() {
+    if (notifEnabled) {
+      setNotifEnabled(false); localStorage.setItem('tipson-dj-notif', '0'); return
+    }
+    if (typeof Notification === 'undefined') {
+      alert('Votre navigateur ne supporte pas les notifications.'); return
+    }
+    let perm = Notification.permission
+    if (perm === 'default') perm = await Notification.requestPermission()
+    if (perm === 'granted') {
+      setNotifEnabled(true); localStorage.setItem('tipson-dj-notif', '1')
+    } else {
+      alert('Notifications bloquées. Autorisez-les dans les réglages du navigateur pour ce site.')
+    }
+  }
+
+  // Affiche une notification navigateur (surtout utile quand l'onglet est en arrière-plan)
+  function showBrowserNotification(req: Request) {
+    if (!notifRef.current || typeof Notification === 'undefined' || Notification.permission !== 'granted') return
+    if (!document.hidden) return // déjà visible à l'écran
+    try {
+      const tag = req.request_type === 'priority' ? '⚡ Demande express' : req.request_type === 'blacklist' ? '🔥 Demande interdite' : '🎵 Nouvelle demande'
+      new Notification(tag, {
+        body: `${req.song_name}${req.artist ? ' · ' + req.artist : ''}`,
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        tag: req.id,
+      })
+    } catch {}
+  }
 
   useEffect(() => {
     const supabase = createClient()
@@ -72,6 +121,7 @@ export default function DJSessionPage() {
           if (newReq.status !== 'pending_payment') {
             setRequests(prev => [newReq, ...prev])
             if (soundRef.current) playNotificationSound()
+            showBrowserNotification(newReq)
           }
         }
       )
@@ -85,6 +135,7 @@ export default function DJSessionPage() {
             if (!exists && updated.status === 'paid') {
               // Nouvelle demande qui vient d'être payée
               if (soundRef.current) playNotificationSound()
+              showBrowserNotification(updated)
               return [updated, ...prev]
             }
             return prev.map(r => r.id === updated.id ? updated : r)
@@ -327,10 +378,15 @@ export default function DJSessionPage() {
             </div>
 
             <div className="flex items-center gap-1">
-              <button onClick={() => setSoundEnabled(s => !s)}
+              <button onClick={toggleSound}
                 className={cn('p-2 rounded-xl transition', soundEnabled ? 'text-purple-400 hover:bg-purple-500/10' : 'text-gray-600 hover:bg-white/5')}
-                title={soundEnabled ? 'Couper les sons' : 'Activer les sons'}>
-                {soundEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+                title={soundEnabled ? 'Couper le son des notifications' : 'Activer le son des notifications'}>
+                {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              </button>
+              <button onClick={toggleNotif}
+                className={cn('p-2 rounded-xl transition', notifEnabled ? 'text-purple-400 hover:bg-purple-500/10' : 'text-gray-600 hover:bg-white/5')}
+                title={notifEnabled ? 'Désactiver les notifications navigateur' : 'Activer les notifications navigateur'}>
+                {notifEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
               </button>
               <button onClick={() => setShowQR(true)} className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition" title="QR Code">
                 <Share2 className="w-4 h-4" />
