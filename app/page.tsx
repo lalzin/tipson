@@ -1,181 +1,208 @@
 import Link from 'next/link'
+import { Unbounded, Sora } from 'next/font/google'
 import {
   Music2, Mic2, Zap, QrCode, ShieldCheck, Wallet,
-  ArrowRight, Radio, ListMusic, Sparkles, Disc3,
+  ArrowRight, Radio, ListMusic, Sparkles, Disc3, ScanLine, Flame,
 } from 'lucide-react'
 import LandingNav from '@/components/LandingNav'
+import Reveal from '@/components/landing/Reveal'
+import TiltCard from '@/components/landing/TiltCard'
+import HeroScene from '@/components/landing/HeroScene'
+
+const display = Unbounded({ subsets: ['latin'], weight: ['500', '700', '900'], variable: '--font-display' })
+const body = Sora({ subsets: ['latin'], weight: ['300', '400', '600', '700'], variable: '--font-body' })
+
+const MARQUEE = ['STROBE', 'ONE MORE TIME', 'BAD GUY', 'LEVELS', 'BLINDING LIGHTS', 'TITANIUM', 'GET LUCKY', 'INSOMNIA', 'SANDSTORM', 'ANIMALS']
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-gray-950 text-white overflow-x-hidden">
-      {/* ── Nav (auth-aware) ──────────────────────────────────── */}
-      <LandingNav />
+    <main className={`${display.variable} ${body.variable} font-body relative min-h-screen overflow-x-hidden bg-[#06060b] text-white`}>
+      {/* ── Atmosphère : aurores + grain ─────────────────────────── */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="lp-aurora absolute -top-40 left-[8%] h-[520px] w-[520px] rounded-full bg-fuchsia-600/25 blur-[130px]" />
+        <div className="lp-aurora absolute top-[30%] right-[2%] h-[460px] w-[460px] rounded-full bg-cyan-500/20 blur-[130px]" style={{ animationDelay: '4s' }} />
+        <div className="lp-aurora absolute bottom-[6%] left-[26%] h-[420px] w-[420px] rounded-full bg-violet-700/20 blur-[130px]" style={{ animationDelay: '8s' }} />
+        <div className="absolute inset-0 opacity-[0.5]" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '44px 44px', maskImage: 'radial-gradient(ellipse at center, black, transparent 78%)' }} />
+      </div>
+      <div className="lp-grain" />
 
-      {/* ── Hero ──────────────────────────────────────────────── */}
-      <section className="relative">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[120px]" />
-          <div className="absolute top-40 right-0 w-[400px] h-[400px] bg-pink-600/15 rounded-full blur-[120px]" />
-        </div>
+      <div className="relative z-10">
+        <LandingNav />
 
-        <div className="relative max-w-6xl mx-auto px-5 sm:px-8 pt-16 sm:pt-24 pb-16 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-gray-300 mb-8">
-            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-            La soirée, dirigée par le public
-          </div>
-
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.05] max-w-4xl mx-auto">
-            Vos sons.{' '}
-            <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
-              Votre soirée.
-            </span>
-          </h1>
-
-          <p className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            La plateforme qui relie le public au DJ, à l&apos;animateur karaoké et au jukebox du lieu.
-            Scannez, choisissez votre morceau et faites vibrer la piste en quelques secondes.
-          </p>
-
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/join"
-              className="group w-full sm:w-auto px-7 py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 font-bold text-lg flex items-center justify-center gap-2 transition shadow-xl shadow-purple-900/30">
-              Rejoindre une soirée
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition" />
-            </Link>
-            <Link href="/dj"
-              className="w-full sm:w-auto px-7 py-4 rounded-2xl glass hover:bg-white/10 font-semibold text-lg flex items-center justify-center gap-2 transition">
-              <Radio className="w-5 h-5 text-purple-400" />
-              Je suis organisateur
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Trois modes ───────────────────────────────────────── */}
-      <section className="relative max-w-6xl mx-auto px-5 sm:px-8 py-12 sm:py-20">
-        <h2 className="text-3xl sm:text-4xl font-black text-center mb-3">Trois façons d&apos;animer</h2>
-        <p className="text-gray-500 text-center mb-12">Un seul outil, adapté à chaque ambiance.</p>
-        <div className="grid md:grid-cols-3 gap-5">
-          <div className="rounded-3xl p-8 border border-purple-500/20 bg-gradient-to-br from-purple-900/20 to-transparent">
-            <div className="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center mb-5">
-              <Music2 className="w-7 h-7 text-purple-400" />
+        {/* ── HERO ──────────────────────────────────────────────── */}
+        <section className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 pb-10 pt-12 sm:px-8 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="text-center lg:text-left">
+            <div className="lp-rise inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-gray-300" style={{ animationDelay: '0.05s' }}>
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-fuchsia-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-fuchsia-500" />
+              </span>
+              La nuit appartient à la foule
             </div>
-            <h3 className="text-2xl font-bold">Mode DJ</h3>
-            <p className="text-gray-400 mt-2 leading-relaxed">
-              Le public propose des morceaux et peut payer pour passer en priorité.
-              Le DJ valide, refuse ou joue en temps réel.
+
+            <h1 className="font-display mt-6 text-[2.7rem] font-black leading-[0.95] sm:text-6xl lg:text-[4.6rem]">
+              <span className="lp-rise block" style={{ animationDelay: '0.12s' }}>Tu choisis</span>
+              <span className="lp-rise lp-shimmer block bg-gradient-to-r from-fuchsia-400 via-cyan-300 to-fuchsia-400"
+                style={{ animationDelay: '0.22s' }}>le son.</span>
+              <span className="lp-rise block" style={{ animationDelay: '0.32s' }}>La piste s&apos;enflamme.</span>
+            </h1>
+
+            <p className="lp-rise mx-auto mt-6 max-w-xl text-base text-gray-400 sm:text-lg lg:mx-0" style={{ animationDelay: '0.45s' }}>
+              TIPSON relie le public au DJ, à l&apos;animateur karaoké et au jukebox du lieu.
+              Scanne, balance ton morceau, fais passer ta demande — en quelques secondes.
             </p>
-          </div>
-          <div className="rounded-3xl p-8 border border-pink-500/20 bg-gradient-to-br from-pink-900/20 to-transparent">
-            <div className="w-14 h-14 rounded-2xl bg-pink-500/15 border border-pink-500/25 flex items-center justify-center mb-5">
-              <Mic2 className="w-7 h-7 text-pink-400" />
-            </div>
-            <h3 className="text-2xl font-bold">Mode Karaoké</h3>
-            <p className="text-gray-400 mt-2 leading-relaxed">
-              Les chanteurs rejoignent une file d&apos;attente, suivent leur position en direct,
-              et peuvent payer pour passer devant. À vous le micro !
-            </p>
-          </div>
-          <div className="rounded-3xl p-8 border border-emerald-500/20 bg-gradient-to-br from-emerald-900/20 to-transparent">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center mb-5">
-              <Disc3 className="w-7 h-7 text-emerald-400" />
-            </div>
-            <h3 className="text-2xl font-bold">Mode Jukebox</h3>
-            <p className="text-gray-400 mt-2 leading-relaxed">
-              Sans DJ : le public ajoute ses titres directement à la file qui passe sur
-              <span className="text-emerald-300"> Apple Music</span>. Option express pour
-              être joué juste après le morceau en cours.
-            </p>
-          </div>
-        </div>
-      </section>
 
-      {/* ── Comment ça marche ─────────────────────────────────── */}
-      <section className="relative max-w-6xl mx-auto px-5 sm:px-8 py-12 sm:py-20">
-        <h2 className="text-3xl sm:text-4xl font-black text-center">Comment ça marche</h2>
-        <p className="text-gray-500 text-center mt-3">Trois étapes, aucune appli à installer.</p>
-
-        <div className="grid sm:grid-cols-3 gap-5 mt-12">
-          {[
-            { icon: QrCode, title: 'Scannez le QR', desc: 'Le code de la soirée vous ouvre la page instantanément.' },
-            { icon: ListMusic, title: 'Choisissez un son', desc: 'Recherchez n\'importe quel titre et envoyez votre demande.' },
-            { icon: Zap, title: 'Faites-le passer', desc: 'Option prioritaire pour être joué ou chanter plus vite.' },
-          ].map((s, i) => (
-            <div key={i} className="glass rounded-3xl p-7 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-5">
-                <s.icon className="w-7 h-7 text-purple-400" />
-              </div>
-              <div className="text-xs font-bold text-purple-400 mb-1">ÉTAPE {i + 1}</div>
-              <h3 className="font-bold text-lg">{s.title}</h3>
-              <p className="text-gray-400 text-sm mt-2">{s.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Réassurance ───────────────────────────────────────── */}
-      <section className="relative max-w-6xl mx-auto px-5 sm:px-8 py-12 sm:py-20">
-        <div className="grid sm:grid-cols-3 gap-5">
-          {[
-            { icon: ShieldCheck, title: 'Paiement sécurisé', desc: 'Carte, Apple Pay & Google Pay via Stripe. Débité seulement si le son est accepté.' },
-            { icon: Wallet, title: 'Sans compte', desc: 'Le public participe sans inscription. Rapide et sans friction.' },
-            { icon: Radio, title: 'Temps réel', desc: 'File d\'attente et statuts mis à jour en direct sur tous les écrans.' },
-          ].map((f, i) => (
-            <div key={i} className="flex gap-4">
-              <div className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
-                <f.icon className="w-5 h-5 text-pink-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold">{f.title}</h3>
-                <p className="text-gray-400 text-sm mt-1">{f.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── CTA final ─────────────────────────────────────────── */}
-      <section className="relative max-w-6xl mx-auto px-5 sm:px-8 py-12 sm:py-20">
-        <div className="relative rounded-[2rem] overflow-hidden border border-white/10 p-10 sm:p-16 text-center bg-gradient-to-br from-purple-900/30 via-gray-900 to-pink-900/20">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/4 w-72 h-72 bg-purple-600/20 rounded-full blur-[100px]" />
-          </div>
-          <div className="relative">
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight">Prêt à faire vibrer la piste ?</h2>
-            <p className="text-gray-400 mt-4 max-w-xl mx-auto">
-              Rejoignez une soirée en cours, ou créez la vôtre en tant qu&apos;organisateur.
-            </p>
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="lp-rise mt-9 flex flex-col items-center gap-3 sm:flex-row lg:items-start" style={{ animationDelay: '0.58s' }}>
               <Link href="/join"
-                className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-white text-gray-950 hover:bg-gray-200 font-bold text-lg transition">
+                className="lp-glow group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-cyan-400 px-7 py-4 text-lg font-bold text-gray-950 transition hover:brightness-110 sm:w-auto">
                 Rejoindre une soirée
+                <ArrowRight className="h-5 w-5 transition group-hover:translate-x-0.5" />
               </Link>
               <Link href="/dj"
-                className="w-full sm:w-auto px-7 py-4 rounded-2xl border border-white/20 hover:bg-white/5 font-semibold text-lg transition">
-                Espace organisateur
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-7 py-4 text-lg font-semibold backdrop-blur transition hover:bg-white/10 sm:w-auto">
+                <Radio className="h-5 w-5 text-cyan-300" />
+                Je suis organisateur
               </Link>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* ── Footer ────────────────────────────────────────────── */}
-      <footer className="border-t border-white/5">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-              <span className="font-black text-xs">T</span>
-            </div>
-            <span className="font-bold text-gray-400">TIPSON</span>
+          <div className="lp-rise" style={{ animationDelay: '0.3s' }}>
+            <HeroScene />
           </div>
-          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-            <Link href="/cgv" className="hover:text-gray-300 transition">CGU / CGV</Link>
-            <Link href="/confidentialite" className="hover:text-gray-300 transition">Confidentialité</Link>
-            <Link href="/mentions-legales" className="hover:text-gray-300 transition">Mentions légales</Link>
-          </nav>
-          <p className="text-gray-600">© {new Date().getFullYear()} TIPSON</p>
-        </div>
-      </footer>
+        </section>
+
+        {/* ── Marquee titres ────────────────────────────────────── */}
+        <section className="relative my-6 border-y border-white/5 py-4">
+          <div className="lp-marquee font-display text-3xl font-black text-white/[0.06] sm:text-5xl">
+            {[...MARQUEE, ...MARQUEE].map((t, i) => (
+              <span key={i} className="mx-6 flex items-center gap-6">{t}<span className="text-fuchsia-500/40">✦</span></span>
+            ))}
+          </div>
+        </section>
+
+        {/* ── L'HISTOIRE EN 3 ACTES ─────────────────────────────── */}
+        <section className="relative mx-auto max-w-5xl px-5 py-20 sm:px-8 sm:py-28">
+          <Reveal className="text-center">
+            <p className="font-display text-xs font-bold uppercase tracking-[0.4em] text-fuchsia-400">L&apos;expérience</p>
+            <h2 className="font-display mt-3 text-3xl font-black sm:text-5xl">Trois temps, une nuit</h2>
+          </Reveal>
+
+          <div className="mt-16 space-y-6">
+            {[
+              { n: '01', icon: ScanLine, c: 'from-fuchsia-500/20', a: 'text-fuchsia-300', t: 'Tu scannes', d: 'Le QR code de la soirée ouvre la page à l\'instant. Aucune appli, aucun compte — juste toi et la musique.' },
+              { n: '02', icon: ListMusic, c: 'from-cyan-500/20', a: 'text-cyan-300', t: 'Tu choisis ton son', d: 'Cherche n\'importe quel titre, ajoute un message, et passe en express pour être joué en priorité.' },
+              { n: '03', icon: Flame, c: 'from-violet-500/20', a: 'text-violet-300', t: 'La piste s\'embrase', d: 'Ta demande s\'affiche en direct côté DJ. Validée, jouée, applaudie — la foule dirige la nuit.' },
+            ].map((s, i) => (
+              <Reveal key={s.n} delay={i * 90}>
+                <div className={`group relative grid grid-cols-[auto_1fr] items-center gap-5 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br ${s.c} to-transparent p-6 sm:gap-8 sm:p-9 ${i % 2 ? 'lg:ml-16' : 'lg:mr-16'}`}>
+                  <span className="font-display select-none text-5xl font-black text-white/10 sm:text-7xl">{s.n}</span>
+                  <div className="flex items-start gap-4">
+                    <div className="hidden h-14 w-14 flex-shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/5 sm:grid">
+                      <s.icon className={`h-7 w-7 ${s.a}`} />
+                    </div>
+                    <div>
+                      <h3 className="font-display text-xl font-bold sm:text-2xl">{s.t}</h3>
+                      <p className="mt-1.5 text-sm text-gray-400 sm:text-base">{s.d}</p>
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
+        {/* ── TROIS MODES (tilt 3D) ─────────────────────────────── */}
+        <section className="relative mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
+          <Reveal className="text-center">
+            <h2 className="font-display text-3xl font-black sm:text-5xl">Trois façons d&apos;animer</h2>
+            <p className="mt-3 text-gray-500">Un seul outil, adapté à chaque ambiance.</p>
+          </Reveal>
+
+          <div className="mt-14 grid gap-5 md:grid-cols-3">
+            {[
+              { icon: Music2, glow: 'rgba(217,70,239,0.35)', ring: 'border-fuchsia-500/25', accent: 'text-fuchsia-300 bg-fuchsia-500/15 border-fuchsia-500/25', t: 'Mode DJ', d: 'Le public propose des morceaux et paie pour passer en priorité. Le DJ valide, refuse ou joue en temps réel.' },
+              { icon: Mic2, glow: 'rgba(236,72,153,0.35)', ring: 'border-pink-500/25', accent: 'text-pink-300 bg-pink-500/15 border-pink-500/25', t: 'Mode Karaoké', d: 'Les chanteurs rejoignent la file, suivent leur position en direct et passent devant en express. À toi le micro !' },
+              { icon: Disc3, glow: 'rgba(16,185,129,0.35)', ring: 'border-emerald-500/25', accent: 'text-emerald-300 bg-emerald-500/15 border-emerald-500/25', t: 'Mode Jukebox', d: 'Sans DJ : le public ajoute ses titres à la file qui passe sur Apple Music. Express pour jouer juste après le morceau en cours.' },
+            ].map((m, i) => (
+              <Reveal key={m.t} delay={i * 100}>
+                <TiltCard glow={m.glow} className="h-full">
+                  <div className={`flex h-full flex-col rounded-[1.6rem] border ${m.ring} bg-gray-900/40 p-7 backdrop-blur-sm`}>
+                    <div className={`lp-tilt-deep mb-5 grid h-14 w-14 place-items-center rounded-2xl border ${m.accent}`}>
+                      <m.icon className="h-7 w-7" />
+                    </div>
+                    <h3 className="font-display text-2xl font-bold">{m.t}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-400">{m.d}</p>
+                  </div>
+                </TiltCard>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
+        {/* ── RÉASSURANCE ───────────────────────────────────────── */}
+        <section className="relative mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+          <div className="grid gap-5 sm:grid-cols-3">
+            {[
+              { icon: ShieldCheck, t: 'Paiement sécurisé', d: 'Carte, Apple Pay & Google Pay via Stripe. Débité seulement si le son est accepté.' },
+              { icon: Wallet, t: 'Sans compte', d: 'Le public participe sans inscription. Rapide, fluide, sans friction.' },
+              { icon: Radio, t: 'Temps réel', d: 'File d\'attente et statuts mis à jour en direct sur tous les écrans.' },
+            ].map((f, i) => (
+              <Reveal key={f.t} delay={i * 90}>
+                <div className="flex h-full gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-5">
+                  <div className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-xl border border-white/10 bg-white/5">
+                    <f.icon className="h-5 w-5 text-cyan-300" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">{f.t}</h3>
+                    <p className="mt-1 text-sm text-gray-400">{f.d}</p>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
+        {/* ── CTA FINAL ─────────────────────────────────────────── */}
+        <section className="relative mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
+          <Reveal>
+            <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 p-10 text-center sm:p-16">
+              <div className="absolute inset-0 -z-10 bg-gradient-to-br from-fuchsia-900/40 via-gray-950 to-cyan-900/30" />
+              <div className="lp-aurora absolute -left-10 top-0 h-64 w-64 rounded-full bg-fuchsia-600/30 blur-[90px]" />
+              <Sparkles className="mx-auto mb-5 h-8 w-8 text-cyan-300" />
+              <h2 className="font-display text-3xl font-black tracking-tight sm:text-5xl">Prêt à faire vibrer la piste ?</h2>
+              <p className="mx-auto mt-4 max-w-xl text-gray-400">
+                Rejoins une soirée en cours, ou crée la tienne en tant qu&apos;organisateur.
+              </p>
+              <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <Link href="/join" className="lp-glow w-full rounded-2xl bg-white px-7 py-4 text-lg font-bold text-gray-950 transition hover:bg-gray-200 sm:w-auto">
+                  Rejoindre une soirée
+                </Link>
+                <Link href="/dj" className="w-full rounded-2xl border border-white/20 px-7 py-4 text-lg font-semibold transition hover:bg-white/5 sm:w-auto">
+                  Espace organisateur
+                </Link>
+              </div>
+            </div>
+          </Reveal>
+        </section>
+
+        {/* ── FOOTER ────────────────────────────────────────────── */}
+        <footer className="relative border-t border-white/5">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 text-sm text-gray-500 sm:flex-row sm:px-8">
+            <div className="flex items-center gap-2">
+              <div className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500 to-cyan-400">
+                <span className="font-display text-xs font-black text-gray-950">T</span>
+              </div>
+              <span className="font-display font-bold text-gray-300">TIPSON</span>
+            </div>
+            <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+              <Link href="/cgv" className="transition hover:text-gray-300">CGU / CGV</Link>
+              <Link href="/confidentialite" className="transition hover:text-gray-300">Confidentialité</Link>
+              <Link href="/mentions-legales" className="transition hover:text-gray-300">Mentions légales</Link>
+            </nav>
+            <p className="text-gray-600">© {new Date().getFullYear()} TIPSON</p>
+          </div>
+        </footer>
+      </div>
     </main>
   )
 }
