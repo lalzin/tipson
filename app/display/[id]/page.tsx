@@ -17,6 +17,7 @@ export default function DisplayPage() {
   const [superMsg, setSuperMsg] = useState<Message | null>(null)
   const [validFlash, setValidFlash] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [controlsVisible, setControlsVisible] = useState(true)
   const counter = useRef(0)
 
   // Plein écran (comme une vidéo)
@@ -25,6 +26,21 @@ export default function DisplayPage() {
     document.addEventListener('fullscreenchange', onChange)
     return () => document.removeEventListener('fullscreenchange', onChange)
   }, [])
+
+  // En plein écran : contrôles discrets, masqués puis révélés au mouvement de la souris
+  useEffect(() => {
+    if (!isFullscreen) { setControlsVisible(true); return }
+    let timer: ReturnType<typeof setTimeout>
+    const reveal = () => {
+      setControlsVisible(true)
+      clearTimeout(timer)
+      timer = setTimeout(() => setControlsVisible(false), 2500)
+    }
+    reveal() // visible brièvement à l'entrée en plein écran
+    window.addEventListener('mousemove', reveal)
+    window.addEventListener('touchstart', reveal)
+    return () => { clearTimeout(timer); window.removeEventListener('mousemove', reveal); window.removeEventListener('touchstart', reveal) }
+  }, [isFullscreen])
   const toggleFullscreen = useCallback(() => {
     if (document.fullscreenElement) document.exitFullscreen?.()
     else document.documentElement.requestFullscreen?.().catch(() => {})
@@ -98,7 +114,7 @@ export default function DisplayPage() {
     : bg === 'aurora' ? 'bg-aurora-base' : 'bg-gray-950'
 
   return (
-    <main style={cssVars} className={`relative h-screen w-screen overflow-hidden text-white ${cssBg}`}>
+    <main style={cssVars} className={`relative h-screen w-screen overflow-hidden text-white ${cssBg} ${isFullscreen && !controlsVisible ? 'cursor-none' : ''}`}>
       {/* Fonds alternatifs */}
       {bg === 'pulse' && (
         <div className="absolute inset-0 pointer-events-none">
@@ -168,8 +184,10 @@ export default function DisplayPage() {
       )}
       <div className="absolute inset-0 bg-black/25 pointer-events-none" />
 
-      {/* Badge beta + plein écran */}
-      <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+      {/* Badge beta + plein écran — discrets, masqués en plein écran sans mouvement */}
+      <div className={`absolute top-4 right-4 z-30 flex items-center gap-2 transition-opacity duration-500 ${
+        isFullscreen && !controlsVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'
+      }`}>
         <button onClick={toggleFullscreen}
           title={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
           className="group flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white/80 hover:text-white transition backdrop-blur">
