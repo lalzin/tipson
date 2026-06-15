@@ -33,6 +33,10 @@ export interface Session {
   super_messages_enabled: boolean
   price_super_message: number
   display_bg: string
+  display_theme: string
+  display_color1: string | null
+  display_color2: string | null
+  display_emojis: string | null
   toxicity_threshold: number
   display_show_dj: boolean
   display_show_venue: boolean

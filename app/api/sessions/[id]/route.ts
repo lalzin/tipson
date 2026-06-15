@@ -80,6 +80,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (body.super_messages_enabled !== undefined) updates.super_messages_enabled = !!body.super_messages_enabled
   if (body.price_super_message !== undefined) updates.price_super_message = body.price_super_message
   if (body.display_bg !== undefined) updates.display_bg = body.display_bg
+  if (body.display_theme !== undefined) updates.display_theme = body.display_theme
+  if (body.display_color1 !== undefined) updates.display_color1 = body.display_color1
+  if (body.display_color2 !== undefined) updates.display_color2 = body.display_color2
+  if (body.display_emojis !== undefined) updates.display_emojis = body.display_emojis
   if (body.toxicity_threshold !== undefined) updates.toxicity_threshold = Math.max(10, Math.min(100, Number(body.toxicity_threshold)))
   if (body.display_show_dj !== undefined) updates.display_show_dj = !!body.display_show_dj
   if (body.display_show_venue !== undefined) updates.display_show_venue = !!body.display_show_venue

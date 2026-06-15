@@ -3,10 +3,9 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import type { Session, Message } from '@/types'
+import { displayColors } from '@/lib/displayThemes'
 
 type Floating = { id: number; emoji: string; left: number }
-
-const EMOJI: Record<string, string> = { heart: '❤️', like: '👍', fire: '🔥', star: '⭐', clap: '👏' }
 
 export default function DisplayPage() {
   const { id } = useParams<{ id: string }>()
@@ -20,8 +19,8 @@ export default function DisplayPage() {
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
 
-  const spawnEmoji = useCallback((type: string) => {
-    const emoji = EMOJI[type] ?? '❤️'
+  const spawnEmoji = useCallback((glyph?: string) => {
+    const emoji = glyph || '❤️'
     const fid = counter.current++
     setFloats(f => [...f, { id: fid, emoji, left: 5 + Math.random() * 90 }])
     setTimeout(() => setFloats(f => f.filter(x => x.id !== fid)), 2500)
@@ -43,7 +42,7 @@ export default function DisplayPage() {
     const supabase = createClient()
     const channel = supabase
       .channel(`display-${id}`, { config: { broadcast: { self: false } } })
-      .on('broadcast', { event: 'emoji' }, ({ payload }) => spawnEmoji(payload?.type))
+      .on('broadcast', { event: 'emoji' }, ({ payload }) => spawnEmoji(payload?.glyph || payload?.type))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `session_id=eq.${id}` },
         ({ new: m }: any) => {
           pushMessage(m as Message)
@@ -76,6 +75,7 @@ export default function DisplayPage() {
   }
 
   const bg = session.display_bg || 'waves'
+  const { c1, c2 } = displayColors(session)
   const joinUrl = `${origin}/join?code=${session.code}`
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&bgcolor=0a0a0a&color=ffffff&qzone=1&data=${encodeURIComponent(joinUrl)}`
   const tickerMsgs = messages.length ? messages : [{ id: 'x', text: 'Envoyez vos messages et vos ❤️ depuis votre téléphone', author_name: null } as any]
@@ -143,11 +143,12 @@ export default function DisplayPage() {
       {/* Zone centrale (DJ + titre animés + flash de validation) */}
       <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none pr-72 text-center">
         {session.display_show_dj !== false && session.profiles?.dj_name && (
-          <p className="dj-anim text-4xl lg:text-6xl font-black text-purple-200 uppercase mb-4">
+          <p className="dj-anim text-4xl lg:text-6xl font-black uppercase mb-4" style={{ color: c1 }}>
             🎧 {session.profiles.dj_name}
           </p>
         )}
-        <h1 className="center-anim text-5xl lg:text-7xl font-black drop-shadow-2xl bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
+        <h1 className="center-anim text-5xl lg:text-7xl font-black drop-shadow-2xl"
+          style={{ backgroundImage: `linear-gradient(90deg, ${c1}, ${c2}, ${c1})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
           {session.name}
         </h1>
         {session.display_show_venue !== false && session.venue && (
@@ -171,7 +172,8 @@ export default function DisplayPage() {
       {/* Super-message */}
       {superMsg && (
         <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none px-10">
-          <div className="super-pop max-w-4xl text-center px-12 py-10 rounded-[2.5rem] bg-gradient-to-br from-purple-600/90 to-pink-600/90 border-2 border-white/30 shadow-2xl">
+          <div className="super-pop max-w-4xl text-center px-12 py-10 rounded-[2.5rem] border-2 border-white/30 shadow-2xl"
+            style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}>
             <p className="text-white/80 text-lg font-bold uppercase tracking-widest mb-3">✨ Super message ✨</p>
             <p className="text-5xl font-black leading-tight break-words">{superMsg.text}</p>
             {superMsg.author_name && <p className="text-white/80 text-2xl mt-5">— {superMsg.author_name}</p>}

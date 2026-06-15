@@ -7,13 +7,7 @@ import dynamic from 'next/dynamic'
 
 const SuperMessageForm = dynamic(() => import('@/components/customer/SuperMessageForm'), { ssr: false })
 
-const EMOJIS = [
-  { type: 'heart', glyph: '❤️' },
-  { type: 'like', glyph: '👍' },
-  { type: 'fire', glyph: '🔥' },
-  { type: 'star', glyph: '⭐' },
-  { type: 'clap', glyph: '👏' },
-]
+const DEFAULT = ['❤️', '👍', '🔥', '⭐', '👏']
 
 interface Props {
   sessionId: string
@@ -21,9 +15,11 @@ interface Props {
   messagesEnabled: boolean
   superEnabled: boolean
   superPrice: number
+  emojis?: string[]
 }
 
-export default function InteractionBar({ sessionId, displayEnabled, messagesEnabled, superEnabled, superPrice }: Props) {
+export default function InteractionBar({ sessionId, displayEnabled, messagesEnabled, superEnabled, superPrice, emojis }: Props) {
+  const emojiList = (emojis && emojis.length ? emojis : DEFAULT).slice(0, 8)
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
   const lastEmoji = useRef(0)
   const [text, setText] = useState('')
@@ -55,12 +51,12 @@ export default function InteractionBar({ sessionId, displayEnabled, messagesEnab
     return () => { supabase.removeChannel(ch); channelRef.current = null }
   }, [sessionId, displayEnabled])
 
-  function sendEmoji(type: string) {
-    setTapped(type); setTimeout(() => setTapped(t => t === type ? null : t), 350)
+  function sendEmoji(glyph: string) {
+    setTapped(glyph); setTimeout(() => setTapped(t => t === glyph ? null : t), 350)
     const now = Date.now()
     if (now - lastEmoji.current < 400) return // anti-spam : 1 / 400ms
     lastEmoji.current = now
-    channelRef.current?.send({ type: 'broadcast', event: 'emoji', payload: { type } })
+    channelRef.current?.send({ type: 'broadcast', event: 'emoji', payload: { glyph } })
   }
 
   async function sendSuper() {
@@ -103,11 +99,11 @@ export default function InteractionBar({ sessionId, displayEnabled, messagesEnab
     <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-gray-950/95 backdrop-blur px-5 py-3 space-y-2.5 shadow-2xl shadow-black/50 max-w-2xl mx-auto">
       {/* Emojis */}
       {displayEnabled && (
-        <div className="flex items-center justify-center gap-2">
-          {EMOJIS.map(e => (
-            <button key={e.type} onClick={() => sendEmoji(e.type)}
+        <div className="flex items-center justify-center gap-2 flex-wrap">
+          {emojiList.map(g => (
+            <button key={g} onClick={() => sendEmoji(g)}
               className="w-11 h-11 rounded-2xl bg-white/5 hover:bg-white/12 active:scale-90 text-2xl transition flex items-center justify-center">
-              <span className={tapped === e.type ? 'emoji-tap inline-block' : 'inline-block'}>{e.glyph}</span>
+              <span className={tapped === g ? 'emoji-tap inline-block' : 'inline-block'}>{g}</span>
             </button>
           ))}
         </div>

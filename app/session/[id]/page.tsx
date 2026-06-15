@@ -15,6 +15,7 @@ import AuthGate from '@/components/customer/AuthGate'
 import KaraokeView from '@/components/customer/KaraokeView'
 import InteractionBar from '@/components/customer/InteractionBar'
 import { Flame } from 'lucide-react'
+import { displayEmojis } from '@/lib/displayThemes'
 
 const StripePaymentForm = dynamic(() => import('@/components/StripePaymentForm'), { ssr: false })
 
@@ -729,6 +730,7 @@ export default function SessionPage() {
           <InteractionBar
             sessionId={id}
             displayEnabled={!!session.display_enabled}
+          emojis={displayEmojis(session)}
             messagesEnabled={!!session.messages_enabled}
             superEnabled={!!session.super_messages_enabled}
             superPrice={session.price_super_message ?? 200}
@@ -996,6 +998,7 @@ export default function SessionPage() {
         <InteractionBar
           sessionId={id}
           displayEnabled={!!session.display_enabled}
+          emojis={displayEmojis(session)}
           messagesEnabled={!!session.messages_enabled}
           superEnabled={!!session.super_messages_enabled}
           superPrice={session.price_super_message ?? 200}

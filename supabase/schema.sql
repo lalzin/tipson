@@ -186,3 +186,9 @@ create table if not exists promo_codes (
 create index if not exists promo_session_idx on promo_codes(session_id);
 alter table promo_codes enable row level security;
 -- Pas de policy de lecture publique : tout passe par le service client (sécurité).
+
+-- ── Thèmes / couleurs / emojis du mode visualisation ────────────────────────────
+alter table sessions add column if not exists display_theme text not null default 'default';
+alter table sessions add column if not exists display_color1 text;
+alter table sessions add column if not exists display_color2 text;
+alter table sessions add column if not exists display_emojis text;

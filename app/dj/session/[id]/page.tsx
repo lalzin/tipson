@@ -14,6 +14,7 @@ import KaraokeQueue from '@/components/dj/KaraokeQueue'
 import MusicLinks from '@/components/dj/MusicLinks'
 import BlacklistModal from '@/components/dj/BlacklistModal'
 import PromoCodesModal from '@/components/dj/PromoCodesModal'
+import { DISPLAY_THEMES, EMOJI_PALETTE, displayEmojis } from '@/lib/displayThemes'
 
 type FilterStatus = 'paid' | 'approved' | 'played' | 'rejected' | 'all'
 
@@ -232,6 +233,8 @@ export default function DJSessionPage() {
     rejected: requests.filter(r => r.status === 'rejected').length,
     all: requests.filter(r => r.status !== 'pending_payment').length,
   }
+
+  const currentEmojis = displayEmojis(session)
 
   if (loading) {
     return (
@@ -585,6 +588,64 @@ export default function DJSessionPage() {
                   <span>Strict</span><span>Permissif</span>
                 </div>
                 <p className="text-gray-600 text-[11px]">Plus le seuil est bas, plus les messages limites sont bloqués (analyse de toxicité Google Perspective).</p>
+              </div>
+            )}
+
+            {/* Thème */}
+            {(session as any).display_enabled && (
+              <div className="space-y-2 pt-1 border-t border-white/5">
+                <label className="text-gray-500 text-xs">Thème</label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {DISPLAY_THEMES.map(t => (
+                    <button key={t.id} type="button"
+                      onClick={() => updateConfig({ display_theme: t.id, display_bg: t.bg, display_color1: t.c1, display_color2: t.c2, display_emojis: t.emojis.join(',') })}
+                      className={cn('rounded-xl p-2 text-xs font-medium border transition relative overflow-hidden',
+                        (session as any).display_theme === t.id ? 'border-purple-500/50 text-white' : 'border-white/10 text-gray-400 hover:text-white')}
+                      style={{ background: `linear-gradient(135deg, ${t.c1}33, ${t.c2}22)` }}>
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Couleurs */}
+            {(session as any).display_enabled && (
+              <div className="flex items-center gap-4 pt-1">
+                <label className="text-gray-500 text-xs">Couleurs</label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={(session as any).display_color1 || '#a855f7'}
+                    onChange={e => updateConfig({ display_color1: e.target.value })}
+                    className="w-8 h-8 rounded-lg bg-transparent border border-white/10 cursor-pointer" />
+                  <input type="color" value={(session as any).display_color2 || '#ec4899'}
+                    onChange={e => updateConfig({ display_color2: e.target.value })}
+                    className="w-8 h-8 rounded-lg bg-transparent border border-white/10 cursor-pointer" />
+                </div>
+              </div>
+            )}
+
+            {/* Emojis */}
+            {(session as any).display_enabled && (
+              <div className="space-y-2 pt-1">
+                <label className="text-gray-500 text-xs">Emojis ({currentEmojis.length}/8) — cliquez pour activer/désactiver</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {EMOJI_PALETTE.map(em => {
+                    const active = currentEmojis.includes(em)
+                    return (
+                      <button key={em} type="button"
+                        onClick={() => {
+                          let next = active ? currentEmojis.filter(x => x !== em) : [...currentEmojis, em]
+                          if (next.length === 0) return
+                          if (next.length > 8) next = next.slice(0, 8)
+                          updateConfig({ display_emojis: next.join(',') })
+                        }}
+                        className={cn('w-9 h-9 rounded-lg text-lg flex items-center justify-center transition border',
+                          active ? 'bg-purple-600/30 border-purple-500/40' : 'bg-white/5 border-white/10 opacity-50 hover:opacity-100')}>
+                        {em}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             )}
 
