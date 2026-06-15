@@ -8,16 +8,17 @@ import {
   ArrowLeft, X, Loader2, CheckCircle2,
   Music2, ListMusic, AlertCircle, ThumbsUp, ThumbsDown, ShieldCheck, LogOut, User as UserIcon
 } from 'lucide-react'
-import type { Session, SearchTrack, Request } from '@/types'
+import type { Session, SearchTrack, Request, BlacklistTrack } from '@/types'
 import { cn, formatPrice } from '@/lib/utils'
 import dynamic from 'next/dynamic'
 import AuthGate from '@/components/customer/AuthGate'
 import KaraokeView from '@/components/customer/KaraokeView'
 import InteractionBar from '@/components/customer/InteractionBar'
+import { Flame } from 'lucide-react'
 
 const StripePaymentForm = dynamic(() => import('@/components/StripePaymentForm'), { ssr: false })
 
-type Step = 'search' | 'select-option' | 'form' | 'payment' | 'tracking'
+type Step = 'choose' | 'search' | 'blacklist' | 'select-option' | 'form' | 'payment' | 'tracking'
 
 interface SessionWithProfile extends Session {
   profiles: { dj_name: string; paypal_me_url: string | null }
@@ -30,13 +31,14 @@ export default function SessionPage() {
   const [user, setUser] = useState<User | null | undefined>(undefined) // undefined = loading
   const [guestMode, setGuestMode] = useState(false)
 
-  const [step, setStep] = useState<Step>('search')
+  const [step, setStep] = useState<Step>('choose')
   const [query, setQuery] = useState('')
   const [tracks, setTracks] = useState<SearchTrack[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
   const [selectedTrack, setSelectedTrack] = useState<SearchTrack | null>(null)
   const [requestType, setRequestType] = useState<'normal' | 'priority' | 'blacklist'>('normal')
-  const [blacklistIds, setBlacklistIds] = useState<Set<string>>(new Set())
+  const [blacklistTracks, setBlacklistTracks] = useState<BlacklistTrack[]>([])
+  const blacklistIds = new Set(blacklistTracks.map(t => String(t.itunes_id)))
   const [customerName, setCustomerName] = useState('')
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -74,7 +76,7 @@ export default function SessionPage() {
   useEffect(() => {
     fetch(`/api/sessions/${id}/blacklist`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.tracks) setBlacklistIds(new Set(d.tracks.map((t: any) => String(t.itunes_id)))) })
+      .then(d => { if (d?.tracks) setBlacklistTracks(d.tracks) })
       .catch(() => {})
   }, [id])
 
@@ -296,12 +298,14 @@ export default function SessionPage() {
 
   function resetFlow() {
     localStorage.removeItem(`tipson-req-${id}`)
-    setStep('search')
+    setStep('choose')
+    setRequestType('normal')
     setSelectedTrack(null)
     setQuery('')
     setTracks([])
     setMessage('')
     setRequest(null)
+    setSubmitError(''); setPromoCode(''); setPromoApplied(false); setPromoMsg('')
     setTimeout(() => inputRef.current?.focus(), 100)
   }
 
@@ -626,11 +630,154 @@ export default function SessionPage() {
     )
   }
 
+  // ─── CHOOSE (écran d'accueil : type de demande) ───────────────────
+  if (step === 'choose') {
+    const hasBlacklist = blacklistTracks.length > 0
+    const showExpress = session.express_enabled !== false
+    return (
+      <main className="min-h-screen flex flex-col bg-gray-950">
+        <div className="sticky top-0 z-10 bg-gray-950/90 backdrop-blur border-b border-white/5 px-5 sm:px-8 py-3.5">
+          <div className="flex items-center justify-between max-w-2xl mx-auto">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-purple-600/20 border border-purple-500/25 flex items-center justify-center">
+                <Music2 className="w-4 h-4 text-purple-400" />
+              </div>
+              <div>
+                <p className="font-bold text-sm leading-none">{session.profiles?.dj_name ?? 'DJ'}</p>
+                <p className="text-gray-500 text-xs mt-0.5 leading-none">{session.name}</p>
+              </div>
+            </div>
+            {user && (
+              <a href="/account" className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 rounded-xl px-2.5 py-1.5 transition">
+                <UserIcon className="w-3.5 h-3.5 text-purple-400" />
+                <span className="text-xs text-gray-300 max-w-[80px] truncate">{user.email ? user.email.split('@')[0] : 'Compte'}</span>
+              </a>
+            )}
+          </div>
+        </div>
+
+        <div className={cn('flex-1 px-5 sm:px-8 pt-6 sm:pt-8 max-w-2xl mx-auto w-full space-y-5',
+          (session.display_enabled || session.messages_enabled) ? 'pb-52' : 'pb-8')}>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold">Que voulez-vous demander ?</h1>
+            <p className="text-gray-400 text-sm sm:text-base mt-0.5">Choisissez votre type de demande.</p>
+          </div>
+
+          <div className="space-y-3">
+            {/* Playlist */}
+            <button onClick={() => { setRequestType('normal'); setStep('search') }}
+              className="w-full glass rounded-2xl p-5 text-left hover:bg-white/8 border hover:border-blue-500/40 transition active:scale-[0.98] group">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex gap-4 items-center">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <ListMusic className="w-6 h-6 text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-base">Demande playlist</p>
+                    <p className="text-gray-400 text-sm mt-0.5">Le DJ passe votre son ce soir</p>
+                  </div>
+                </div>
+                <p className="font-black text-2xl text-blue-300 flex-shrink-0">{formatPrice(session.price_normal)}</p>
+              </div>
+            </button>
+
+            {/* Express */}
+            {showExpress && (
+              <button onClick={() => { setRequestType('priority'); setStep('search') }}
+                className="w-full rounded-2xl p-5 text-left transition active:scale-[0.98] group relative overflow-hidden border border-purple-500/30 hover:border-purple-400/50"
+                style={{ background: 'linear-gradient(135deg, rgba(147,51,234,0.12) 0%, rgba(219,39,119,0.08) 100%)' }}>
+                <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-600 to-pink-600 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">EXPRESS</div>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex gap-4 items-center">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center flex-shrink-0">
+                      <Zap className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-base">Demande express</p>
+                      <p className="text-gray-400 text-sm mt-0.5">Passez devant la file</p>
+                    </div>
+                  </div>
+                  <p className="font-black text-2xl text-purple-300 flex-shrink-0">{formatPrice(session.price_priority)}</p>
+                </div>
+              </button>
+            )}
+
+            {/* Liste noire */}
+            {hasBlacklist && (
+              <button onClick={() => setStep('blacklist')}
+                className="w-full rounded-2xl p-5 text-left transition active:scale-[0.98] group relative overflow-hidden border border-red-500/30 hover:border-red-400/50"
+                style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.12) 0%, rgba(249,115,22,0.08) 100%)' }}>
+                <div className="absolute top-0 right-0 bg-gradient-to-l from-red-600 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">LISTE NOIRE</div>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex gap-4 items-center">
+                    <div className="w-12 h-12 rounded-2xl bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
+                      <Flame className="w-6 h-6 text-red-400" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-base">Demande liste noire</p>
+                      <p className="text-gray-400 text-sm mt-0.5">Faire passer un morceau interdit</p>
+                    </div>
+                  </div>
+                  <p className="font-black text-2xl text-red-300 flex-shrink-0">{formatPrice(session.price_blacklist ?? 1000)}</p>
+                </div>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {(session.display_enabled || session.messages_enabled) && (
+          <InteractionBar
+            sessionId={id}
+            displayEnabled={!!session.display_enabled}
+            messagesEnabled={!!session.messages_enabled}
+            superEnabled={!!session.super_messages_enabled}
+            superPrice={session.price_super_message ?? 200}
+          />
+        )}
+      </main>
+    )
+  }
+
+  // ─── BLACKLIST (liste des morceaux interdits à proposer) ──────────
+  if (step === 'blacklist') {
+    return (
+      <main className="min-h-screen flex flex-col px-6 pt-8 pb-8 bg-gradient-to-b from-gray-950 via-red-950/10 to-gray-950">
+        <button onClick={() => setStep('choose')} className="flex items-center gap-1 text-gray-400 hover:text-white mb-5 transition text-sm">
+          <ArrowLeft className="w-4 h-4" /> Retour
+        </button>
+        <div className="flex flex-col space-y-4 max-w-md mx-auto w-full">
+          <div>
+            <h2 className="text-2xl font-bold">Morceaux interdits 🔥</h2>
+            <p className="text-gray-400 text-sm mt-1">Choisissez un morceau · {formatPrice(session.price_blacklist ?? 1000)} pour le faire passer.</p>
+          </div>
+          <div className="space-y-2">
+            {blacklistTracks.map(t => (
+              <button key={t.id}
+                onClick={() => {
+                  setSelectedTrack({ id: t.itunes_id, name: t.name, artist: t.artist, album: '', image: t.image ?? '', imageSm: t.image ?? '', previewUrl: null, durationMs: 0, url: null })
+                  setRequestType('blacklist'); setSubmitError(''); setStep('form')
+                }}
+                className="w-full glass rounded-2xl p-3 flex gap-3 items-center hover:bg-white/8 active:scale-[0.98] transition text-left group">
+                {t.image && <img src={t.image} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />}
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium truncate text-sm">{t.name}</p>
+                  <p className="text-gray-400 text-xs truncate">{t.artist}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-600 flex-shrink-0 group-hover:text-red-400 transition" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   // ─── FORM ─────────────────────────────────────────────────────────
   if (step === 'form') {
+    const formBack = requestType === 'blacklist' ? 'blacklist' : 'search'
     return (
       <main className="min-h-screen flex flex-col px-6 pt-8 pb-8 bg-gradient-to-b from-gray-950 via-purple-950/10 to-gray-950">
-        <button onClick={() => setStep('select-option')} className="flex items-center gap-1 text-gray-400 hover:text-white mb-5 transition text-sm">
+        <button onClick={() => setStep(formBack)} className="flex items-center gap-1 text-gray-400 hover:text-white mb-5 transition text-sm">
           <ArrowLeft className="w-4 h-4" /> Retour
         </button>
         <div className="flex flex-col space-y-5 max-w-md mx-auto w-full">
@@ -655,7 +802,7 @@ export default function SessionPage() {
                 <p className="font-medium truncate text-sm">{selectedTrack.name}</p>
                 <p className="text-gray-400 text-xs truncate">{selectedTrack.artist}</p>
               </div>
-              <button onClick={() => setStep('search')} className="text-gray-600 hover:text-gray-400 transition flex-shrink-0">
+              <button onClick={() => setStep(formBack)} className="text-gray-600 hover:text-gray-400 transition flex-shrink-0">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -727,121 +874,6 @@ export default function SessionPage() {
     )
   }
 
-  // ─── SELECT OPTION ────────────────────────────────────────────────
-  if (step === 'select-option') {
-    const isBlacklisted = !!selectedTrack && blacklistIds.has(String(selectedTrack.id))
-    return (
-      <main className="min-h-screen flex flex-col px-6 pt-12 pb-8 bg-gradient-to-b from-gray-950 via-purple-950/10 to-gray-950">
-        <button onClick={() => setStep('search')} className="flex items-center gap-1 text-gray-400 hover:text-white mb-8 transition text-sm">
-          <ArrowLeft className="w-4 h-4" /> Retour
-        </button>
-        <div className="flex-1 flex flex-col space-y-6 max-w-md mx-auto w-full">
-          <div>
-            <h2 className="text-2xl font-bold">{isBlacklisted ? 'Morceau interdit 🔥' : 'Choisissez votre option'}</h2>
-            <p className="text-gray-400 text-sm mt-1">
-              {isBlacklisted ? 'Ce morceau est dans la liste noire du DJ.' : 'Quand voulez-vous entendre votre son ?'}
-            </p>
-          </div>
-
-          {selectedTrack && (
-            <div className="glass rounded-2xl p-3 flex gap-3 items-center">
-              {selectedTrack.image && (
-                <img src={selectedTrack.image} alt="" className="w-12 h-12 rounded-xl object-cover" />
-              )}
-              <div className="min-w-0">
-                <p className="font-medium truncate text-sm">{selectedTrack.name}</p>
-                <p className="text-gray-400 text-xs truncate">{selectedTrack.artist}</p>
-              </div>
-            </div>
-          )}
-
-          {isBlacklisted ? (
-            <div className="space-y-3">
-              <button
-                onClick={() => { setRequestType('blacklist'); setStep('form') }}
-                className="w-full rounded-2xl p-5 text-left transition active:scale-[0.98] group relative overflow-hidden border border-red-500/40 hover:border-red-400/60"
-                style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(249,115,22,0.10) 100%)' }}
-              >
-                <div className="absolute top-0 right-0 bg-gradient-to-l from-red-600 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">
-                  LISTE NOIRE
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex gap-4 items-center">
-                    <div className="w-12 h-12 rounded-2xl bg-red-500/20 border border-red-500/30 flex items-center justify-center flex-shrink-0">
-                      <span className="text-2xl">🔥</span>
-                    </div>
-                    <div>
-                      <p className="font-bold text-base">Le faire passer quand même</p>
-                      <p className="text-gray-400 text-sm mt-0.5">Tarif spécial morceau interdit</p>
-                    </div>
-                  </div>
-                  <p className="font-black text-2xl text-red-300 flex-shrink-0">{formatPrice(session.price_blacklist ?? 1000)}</p>
-                </div>
-              </button>
-              <p className="text-center text-gray-600 text-xs">Le DJ reste libre d&apos;accepter ou non. Débité seulement s&apos;il accepte.</p>
-            </div>
-          ) : (
-          <div className="space-y-3">
-            {/* Option normale — 1€ */}
-            <button
-              onClick={() => { setRequestType('normal'); setStep('form') }}
-              className="w-full glass rounded-2xl p-5 text-left hover:bg-white/8 border hover:border-blue-500/40 transition active:scale-[0.98] group"
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex gap-4 items-center">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
-                    <ListMusic className="w-6 h-6 text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-base">Dans la playlist</p>
-                    <p className="text-gray-400 text-sm mt-0.5">Le DJ passe votre son ce soir</p>
-                  </div>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="font-black text-2xl text-blue-300">{formatPrice(session.price_normal)}</p>
-                  <ChevronRight className="w-4 h-4 text-gray-600 ml-auto mt-0.5 group-hover:text-blue-300 transition" />
-                </div>
-              </div>
-            </button>
-
-            {/* Option priorité — masquée si l'express est désactivé */}
-            {session.express_enabled !== false && (
-            <button
-              onClick={() => { setRequestType('priority'); setStep('form') }}
-              className="w-full rounded-2xl p-5 text-left transition active:scale-[0.98] group relative overflow-hidden border border-purple-500/30 hover:border-purple-400/50"
-              style={{ background: 'linear-gradient(135deg, rgba(147,51,234,0.12) 0%, rgba(219,39,119,0.08) 100%)' }}
-            >
-              <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-600 to-pink-600 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">
-                PRIORITÉ
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex gap-4 items-center">
-                  <div className="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center flex-shrink-0">
-                    <Zap className="w-6 h-6 text-purple-400" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-base">La chanson maintenant</p>
-                    <p className="text-gray-400 text-sm mt-0.5">Passe après le morceau en cours</p>
-                  </div>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="font-black text-2xl text-purple-300">{formatPrice(session.price_priority)}</p>
-                  <ChevronRight className="w-4 h-4 text-gray-600 ml-auto mt-0.5 group-hover:text-purple-300 transition" />
-                </div>
-              </div>
-            </button>
-            )}
-          </div>
-          )}
-
-          <p className="text-center text-gray-600 text-xs">
-            Paiement sécurisé par Stripe · débité seulement si le DJ accepte
-          </p>
-        </div>
-      </main>
-    )
-  }
-
   // ─── SEARCH (défaut) ──────────────────────────────────────────────
   return (
     <main className="min-h-screen flex flex-col bg-gray-950">
@@ -884,8 +916,13 @@ export default function SessionPage() {
 
       <div className={cn('flex-1 px-5 sm:px-8 pt-5 sm:pt-8 max-w-2xl mx-auto w-full space-y-4',
         (session.display_enabled || session.messages_enabled) ? 'pb-52' : 'pb-8')}>
+        <button onClick={() => setStep('choose')} className="flex items-center gap-1 text-gray-400 hover:text-white transition text-sm">
+          <ArrowLeft className="w-4 h-4" /> Options
+        </button>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Quel son vous voulez ?</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">
+            {requestType === 'priority' ? 'Quel son passer en express ?' : 'Quel son vous voulez ?'}
+          </h1>
           <p className="text-gray-400 text-sm sm:text-base mt-0.5">Recherchez un titre ou un artiste</p>
         </div>
 
@@ -919,14 +956,10 @@ export default function SessionPage() {
                 key={track.id}
                 onClick={() => {
                   setSelectedTrack(track)
-                  if (blacklistIds.has(String(track.id))) {
-                    // Morceau en liste noire → prix premium imposé
-                    setRequestType('blacklist'); setStep('select-option')
-                  } else if (session.express_enabled === false) {
-                    setRequestType('normal'); setStep('form')
-                  } else {
-                    setStep('select-option')
-                  }
+                  setSubmitError(''); setPromoCode(''); setPromoApplied(false); setPromoMsg('')
+                  // Si le morceau est en liste noire → tarif premium imposé
+                  if (blacklistIds.has(String(track.id))) setRequestType('blacklist')
+                  setStep('form')
                 }}
                 className="w-full glass rounded-2xl p-3 flex gap-3 items-center hover:bg-white/8 active:scale-[0.98] transition text-left group"
               >
