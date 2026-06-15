@@ -3,7 +3,7 @@ import './globals.css'
 import CookieNotice from '@/components/CookieNotice'
 
 export const metadata: Metadata = {
-  title: 'TIPSON — Demandez vos sons',
+  title: 'TIPSON · Demandez vos sons',
   description: 'Envoyez une demande musicale à votre DJ en quelques secondes',
   manifest: '/manifest.json',
 }

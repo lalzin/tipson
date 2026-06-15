@@ -653,7 +653,7 @@ export default function DJSessionPage() {
             {/* Emojis */}
             {(session as any).display_enabled && (
               <div className="space-y-2 pt-1">
-                <label className="text-gray-500 text-xs">Emojis ({currentEmojis.length}/8) — cliquez pour activer/désactiver</label>
+                <label className="text-gray-500 text-xs">Emojis ({currentEmojis.length}/8) · cliquez pour activer/désactiver</label>
                 <div className="flex flex-wrap gap-1.5">
                   {EMOJI_PALETTE.map(em => {
                     const active = currentEmojis.includes(em)

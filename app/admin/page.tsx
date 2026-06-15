@@ -178,7 +178,7 @@ export default function AdminPage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Activity className="w-4 h-4 text-purple-400" />
-                  <h3 className="font-semibold text-sm">Revenus — 14 derniers jours</h3>
+                  <h3 className="font-semibold text-sm">Revenus · 14 derniers jours</h3>
                 </div>
                 <span className="text-gray-500 text-xs">{stats.requests.priority} demandes prioritaires</span>
               </div>

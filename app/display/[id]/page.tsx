@@ -51,7 +51,7 @@ export default function DisplayPage() {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `session_id=eq.${id}` },
         ({ new: r }: any) => {
           if (r.status === 'approved') {
-            setValidFlash(`${r.song_name} — ${r.artist}`)
+            setValidFlash(`${r.song_name} · ${r.artist}`)
             setTimeout(() => setValidFlash(null), 2200)
           }
         })
@@ -219,7 +219,7 @@ export default function DisplayPage() {
             style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}>
             <p className="text-white/80 text-lg font-bold uppercase tracking-widest mb-3">✨ Super message ✨</p>
             <p className="text-5xl font-black leading-tight break-words">{superMsg.text}</p>
-            {superMsg.author_name && <p className="text-white/80 text-2xl mt-5">— {superMsg.author_name}</p>}
+            {superMsg.author_name && <p className="text-white/80 text-2xl mt-5">· {superMsg.author_name}</p>}
           </div>
         </div>
       )}

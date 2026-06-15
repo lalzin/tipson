@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Politique de confidentialité — TIPSON',
+  title: 'Politique de confidentialité · TIPSON',
   description: 'Comment TIPSON collecte, utilise et protège vos données personnelles.',
 }
 
@@ -52,21 +52,21 @@ export default function PrivacyPage() {
 
         <Section title="3. Finalités et bases légales">
           <ul className="list-disc pl-5 space-y-1.5">
-            <li><strong>Fournir le service</strong> (demandes de sons, file karaoké, suivi) — exécution du contrat.</li>
-            <li><strong>Traiter les paiements</strong> — exécution du contrat.</li>
-            <li><strong>Sécuriser la plateforme</strong> (anti-fraude, limitation de requêtes) — intérêt légitime.</li>
-            <li><strong>Gérer votre compte et vos accès organisateur</strong> — exécution du contrat / intérêt légitime.</li>
+            <li><strong>Fournir le service</strong> (demandes de sons, file karaoké, suivi) : exécution du contrat.</li>
+            <li><strong>Traiter les paiements</strong> : exécution du contrat.</li>
+            <li><strong>Sécuriser la plateforme</strong> (anti-fraude, limitation de requêtes) : intérêt légitime.</li>
+            <li><strong>Gérer votre compte et vos accès organisateur</strong> : exécution du contrat / intérêt légitime.</li>
           </ul>
         </Section>
 
         <Section title="4. Sous-traitants et destinataires">
           <p>Nous faisons appel à des prestataires qui agissent comme sous-traitants :</p>
           <ul className="list-disc pl-5 space-y-1.5 mt-2">
-            <li><strong>Supabase</strong> — hébergement de la base de données et authentification.</li>
-            <li><strong>Stripe</strong> — traitement sécurisé des paiements.</li>
-            <li><strong>Google</strong> — connexion via compte Google (si vous l&apos;utilisez).</li>
-            <li><strong>Vercel</strong> — hébergement de l&apos;application.</li>
-            <li><strong>Apple (iTunes Search API)</strong> — recherche de morceaux ; seules les requêtes de recherche sont transmises, aucune donnée personnelle.</li>
+            <li><strong>Supabase</strong> : hébergement de la base de données et authentification.</li>
+            <li><strong>Stripe</strong> : traitement sécurisé des paiements.</li>
+            <li><strong>Google</strong> : connexion via compte Google (si vous l&apos;utilisez).</li>
+            <li><strong>Vercel</strong> : hébergement de l&apos;application.</li>
+            <li><strong>Apple (iTunes Search API)</strong> : recherche de morceaux ; seules les requêtes de recherche sont transmises, aucune donnée personnelle.</li>
           </ul>
           <p className="mt-2 text-gray-400">
             Certains prestataires peuvent traiter des données hors de l&apos;Union européenne. Dans ce cas,

@@ -49,7 +49,7 @@ export default function LandingPage() {
 
             <p className="lp-rise mx-auto mt-6 max-w-xl text-base text-gray-400 sm:text-lg lg:mx-0" style={{ animationDelay: '0.45s' }}>
               TIPSON relie le public au DJ, à l&apos;animateur karaoké et au jukebox du lieu.
-              Scanne, balance ton morceau, fais passer ta demande — en quelques secondes.
+              Scanne, balance ton morceau, fais passer ta demande en quelques secondes.
             </p>
 
             <div className="lp-rise mt-9 flex flex-col items-center gap-3 sm:flex-row lg:items-start" style={{ animationDelay: '0.58s' }}>
@@ -89,9 +89,9 @@ export default function LandingPage() {
 
           <div className="mt-16 space-y-6">
             {[
-              { n: '01', icon: ScanLine, c: 'from-fuchsia-500/20', a: 'text-fuchsia-300', t: 'Tu scannes', d: 'Le QR code de la soirée ouvre la page à l\'instant. Aucune appli, aucun compte — juste toi et la musique.' },
+              { n: '01', icon: ScanLine, c: 'from-fuchsia-500/20', a: 'text-fuchsia-300', t: 'Tu scannes', d: 'Le QR code de la soirée ouvre la page à l\'instant. Aucune appli, aucun compte, juste toi et la musique.' },
               { n: '02', icon: ListMusic, c: 'from-cyan-500/20', a: 'text-cyan-300', t: 'Tu choisis ton son', d: 'Cherche n\'importe quel titre, ajoute un message, et passe en express pour être joué en priorité.' },
-              { n: '03', icon: Flame, c: 'from-violet-500/20', a: 'text-violet-300', t: 'La piste s\'embrase', d: 'Ta demande s\'affiche en direct côté DJ. Validée, jouée, applaudie — la foule dirige la nuit.' },
+              { n: '03', icon: Flame, c: 'from-violet-500/20', a: 'text-violet-300', t: 'La piste s\'embrase', d: 'Ta demande s\'affiche en direct côté DJ. Validée, jouée, applaudie : la foule dirige la nuit.' },
             ].map((s, i) => (
               <Reveal key={s.n} delay={i * 90}>
                 <div className={`group relative grid grid-cols-[auto_1fr] items-center gap-5 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br ${s.c} to-transparent p-6 sm:gap-8 sm:p-9 ${i % 2 ? 'lg:ml-16' : 'lg:mr-16'}`}>

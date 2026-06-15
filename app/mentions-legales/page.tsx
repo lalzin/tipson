@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Mentions légales — TIPSON',
+  title: 'Mentions légales · TIPSON',
   description: 'Informations légales relatives à l\'éditeur et à l\'hébergeur du site TIPSON.',
 }
 
@@ -53,7 +53,7 @@ export default function LegalPage() {
           </ul>
           <p className="mt-3">Les données et l&apos;authentification sont gérées via :</p>
           <ul className="list-none space-y-1.5 mt-2">
-            <li>Supabase — <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">supabase.com</a></li>
+            <li>Supabase : <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">supabase.com</a></li>
           </ul>
         </Section>
 

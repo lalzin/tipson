@@ -247,7 +247,7 @@ export default function KaraokeView({ session, user, guestMode, sessionId }: Pro
                   {wasInQueue
                     ? <>
                         Vous étiez dans la file mais la soirée s&apos;est terminée.<br />
-                        Nous nous en excusons{request && request.amount > 0 ? ' — vous n\'avez pas été débité' : ''}.
+                        Nous nous en excusons{request && request.amount > 0 ? ', vous n\'avez pas été débité' : ''}.
                       </>
                     : <>Le karaoké est maintenant terminé.<br />Merci d&apos;avoir participé, on espère vous revoir bientôt !</>
                   }

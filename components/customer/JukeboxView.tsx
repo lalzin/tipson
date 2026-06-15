@@ -278,7 +278,7 @@ export default function JukeboxView({ session, sessionId }: Props) {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Mets ta chanson 🎶</h1>
           <p className="text-gray-400 text-sm sm:text-base mt-0.5">
-            Ajoute un titre à la file — il passera sur les enceintes du lieu.
+            Ajoute un titre à la file, il passera sur les enceintes du lieu.
             {isPaid && <span className="text-emerald-400"> {priceNormal > 0 ? `À partir de ${formatPrice(priceNormal)}.` : ''}</span>}
           </p>
         </div>

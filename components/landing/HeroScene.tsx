@@ -57,7 +57,7 @@ export default function HeroScene() {
       {/* cartes de demande flottantes */}
       <div className="lp-float absolute -left-3 top-10 w-[58%]" style={{ ...layer(46), ['--rot' as any]: '-7deg' }}>
         <FloatCard icon={<Zap className="h-3.5 w-3.5 text-yellow-300" />} tag="EXPRESS" tagCls="text-yellow-300 bg-yellow-400/15"
-          title="Strobe — Deadmau5" sub="passe maintenant" />
+          title="Strobe · Deadmau5" sub="passe maintenant" />
       </div>
       <div className="lp-float-rev absolute -right-2 top-1/3 w-[56%]" style={{ ...layer(60), ['--rot' as any]: '6deg' }}>
         <FloatCard icon={<Music2 className="h-3.5 w-3.5 text-cyan-300" />} tag="PLAYLIST" tagCls="text-cyan-300 bg-cyan-400/15"

@@ -146,7 +146,7 @@ export default function NewSessionModal({ onClose, onCreate }: Props) {
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder={sessionType === 'karaoke' ? 'Ex : Karaoké du Vendredi Soir' : 'Ex : Soirée Rooftop — Samedi 14 Juin'}
+              placeholder={sessionType === 'karaoke' ? 'Ex : Karaoké du Vendredi Soir' : 'Ex : Soirée Rooftop · Samedi 14 Juin'}
               required
               autoFocus
               className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 transition"

@@ -227,7 +227,7 @@ export default function SessionPage() {
     try {
       const res = await fetch(`/api/sessions/${id}/promo-codes/validate?code=${encodeURIComponent(code)}`)
       const d = await res.json()
-      if (d.valid) { setPromoApplied(true); setPromoMsg('Code appliqué ✓ — gratuit') }
+      if (d.valid) { setPromoApplied(true); setPromoMsg('Code appliqué ✓ · gratuit') }
       else { setPromoApplied(false); setPromoMsg(d.reason || 'Code invalide') }
     } catch { setPromoMsg('Erreur, réessayez') }
     finally { setPromoChecking(false) }

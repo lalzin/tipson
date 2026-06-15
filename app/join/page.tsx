@@ -33,7 +33,7 @@ function JoinForm() {
     setError('')
     const res = await fetch(`/api/session-by-code?code=${trimmed}`)
     if (!res.ok) {
-      setError('Code invalide — vérifiez le code et réessayez')
+      setError('Code invalide, vérifiez le code et réessayez')
       setLoading(false)
       return
     }

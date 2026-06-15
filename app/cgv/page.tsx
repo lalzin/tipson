@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Conditions générales — TIPSON',
+  title: 'Conditions générales · TIPSON',
   description: 'Conditions générales d\'utilisation et de vente du service TIPSON.',
 }
 

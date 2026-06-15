@@ -119,7 +119,7 @@ function DJAuth() {
           <div>
             <h1 className="text-3xl font-black tracking-tight">TIPSON</h1>
             <p className="text-gray-400 text-sm mt-1">
-              {mode === 'login' ? 'Espace organisateur — Connexion' : 'Créer un compte organisateur'}
+              {mode === 'login' ? 'Espace organisateur · Connexion' : 'Créer un compte organisateur'}
             </p>
           </div>
         </div>
