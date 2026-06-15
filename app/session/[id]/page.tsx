@@ -40,6 +40,7 @@ export default function SessionPage() {
   const [customerName, setCustomerName] = useState('')
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const [confirming, setConfirming] = useState(false)
   const [request, setRequest] = useState<Request | null>(null)
   const [showCancel, setShowCancel] = useState(false)
@@ -214,6 +215,7 @@ export default function SessionPage() {
   async function handleSubmit() {
     if (!session || !selectedTrack || !customerName.trim()) return
     setSubmitting(true)
+    setSubmitError('')
     try {
       const res = await fetch('/api/requests', {
         method: 'POST',
@@ -250,8 +252,8 @@ export default function SessionPage() {
       } else {
         setStep('payment')
       }
-    } catch {
-      alert('Erreur lors de la demande, réessayez.')
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Erreur lors de la demande, réessayez.')
     } finally {
       setSubmitting(false)
     }
@@ -665,6 +667,13 @@ export default function SessionPage() {
               />
             </div>
           </div>
+
+          {submitError && (
+            <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 flex items-start gap-2">
+              <span className="text-base">🎵</span>
+              <p className="text-red-300 text-sm">{submitError}</p>
+            </div>
+          )}
 
           <button
             onClick={handleSubmit}

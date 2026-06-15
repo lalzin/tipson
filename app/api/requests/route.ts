@@ -107,6 +107,23 @@ export async function POST(req: NextRequest) {
       finalRequestType = request_type === 'priority' ? 'priority' : 'normal'
       amount = finalRequestType === 'priority' ? session.price_priority : session.price_normal
     }
+
+    // Anti-doublon (session DJ uniquement) : un même morceau ne peut pas être
+    // demandé/joué deux fois. (En karaoké, plusieurs personnes peuvent le chanter.)
+    const admin = createServiceSupabaseClient()
+    const { data: dup } = await admin
+      .from('requests')
+      .select('id, status')
+      .eq('session_id', session_id)
+      .eq('song_name', song_name)
+      .eq('artist', artist)
+      .in('status', ['paid', 'approved', 'played'])
+      .limit(1)
+      .maybeSingle()
+    if (dup) {
+      const word = dup.status === 'played' ? 'a déjà été joué' : 'a déjà été demandé'
+      return NextResponse.json({ error: `Ce morceau ${word} dans cette soirée.` }, { status: 409 })
+    }
   }
 
   const { data, error } = await supabase
