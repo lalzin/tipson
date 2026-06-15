@@ -15,6 +15,7 @@ import AuthGate from '@/components/customer/AuthGate'
 import KaraokeView from '@/components/customer/KaraokeView'
 import JukeboxView from '@/components/customer/JukeboxView'
 import InteractionBar from '@/components/customer/InteractionBar'
+import ActiveRequests from '@/components/customer/ActiveRequests'
 import { Flame } from 'lucide-react'
 import { displayEmojis } from '@/lib/displayThemes'
 
@@ -54,7 +55,44 @@ export default function SessionPage() {
   const [showCancel, setShowCancel] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [cancelled, setCancelled] = useState(false)
+  const [tracked, setTracked] = useState<Request[]>([])
+  const [cancelingId, setCancelingId] = useState<string | null>(null)
+  const clientIdRef = useRef<string>('')
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // ── Demandes en cours (multi) : épinglées à l'écran, non bloquantes ──
+  function persistTracked(list: Request[]) {
+    const ids = list.map(r => r.id)
+    if (ids.length) localStorage.setItem(`tipson-reqs-${id}`, JSON.stringify(ids))
+    else localStorage.removeItem(`tipson-reqs-${id}`)
+  }
+  function addTracked(req: Request) {
+    setTracked(prev => {
+      const next = [req, ...prev.filter(r => r.id !== req.id)]
+      persistTracked(next)
+      return next
+    })
+  }
+  function dismissTracked(rid: string) {
+    setTracked(prev => {
+      const next = prev.filter(r => r.id !== rid)
+      persistTracked(next)
+      return next
+    })
+  }
+  async function cancelTracked(rid: string) {
+    if (!confirm('Annuler cette demande ? Votre paiement sera annulé.')) return
+    setCancelingId(rid)
+    try {
+      const res = await fetch(`/api/requests/${rid}/cancel`, { method: 'POST' })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Annulation impossible') }
+      dismissTracked(rid)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Annulation impossible.')
+    } finally {
+      setCancelingId(null)
+    }
+  }
 
   async function cancelRequest() {
     if (!request) return
@@ -138,20 +176,28 @@ export default function SessionPage() {
         const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || ''
         setCustomerName(name)
       }
-      // Restaure le tracking si une demande en cours existe
-      const savedId = localStorage.getItem(`tipson-req-${id}`)
-      if (savedId) {
-        fetch(`/api/requests/${savedId}/public`)
-          .then(r => r.ok ? r.json() : null)
-          .then(data => {
-            if (data && !['rejected', 'played'].includes(data.status)) {
-              setRequest(data)
-              setStep('tracking')
-            } else if (data && ['rejected', 'played'].includes(data.status)) {
-              // Demande terminée, on retire du localStorage
-              localStorage.removeItem(`tipson-req-${id}`)
-            }
-          })
+      // Identifiant d'appareil (limite par utilisateur, même invité)
+      let cid = localStorage.getItem('tipson-cid')
+      if (!cid) {
+        cid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2)
+        localStorage.setItem('tipson-cid', cid)
+      }
+      clientIdRef.current = cid
+
+      // Restaure les demandes en cours (épinglées). Migration de l'ancienne clé unique.
+      let ids: string[] = []
+      try { ids = JSON.parse(localStorage.getItem(`tipson-reqs-${id}`) || '[]') } catch {}
+      const legacy = localStorage.getItem(`tipson-req-${id}`)
+      if (legacy && !ids.includes(legacy)) ids.push(legacy)
+      localStorage.removeItem(`tipson-req-${id}`)
+      if (ids.length) {
+        Promise.all(ids.map(rid =>
+          fetch(`/api/requests/${rid}/public`).then(r => r.ok ? r.json() : null).catch(() => null)
+        )).then(list => {
+          const valid = (list.filter(Boolean) as Request[]).filter(r => !['played', 'rejected'].includes(r.status))
+          setTracked(valid)
+          persistTracked(valid)
+        })
       }
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -202,6 +248,42 @@ export default function SessionPage() {
     document.addEventListener('visibilitychange', onVisibility)
     return () => { document.removeEventListener('visibilitychange', onVisibility); stop() }
   }, [reqId, reqTerminal])
+
+  // Suivi temps réel des demandes épinglées (statut qui évolue côté DJ)
+  const trackedKey = tracked.map(r => r.id).join(',')
+  useEffect(() => {
+    if (!trackedKey) return
+    const supabase = createClient()
+    const ids = new Set(trackedKey.split(','))
+    const channel = supabase
+      .channel(`tracked-${id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `session_id=eq.${id}` },
+        payload => {
+          const n = payload.new as Request
+          if (!ids.has(n.id)) return
+          setTracked(prev => { const next = prev.map(r => r.id === n.id ? { ...r, ...n } : r); persistTracked(next); return next })
+        })
+      .subscribe()
+    const poll = setInterval(() => {
+      if (document.hidden) return
+      ids.forEach(rid => {
+        fetch(`/api/requests/${rid}/public`).then(r => r.ok ? r.json() : null)
+          .then(d => { if (d) setTracked(prev => { const next = prev.map(r => r.id === d.id ? { ...r, ...d } : r); persistTracked(next); return next }) })
+          .catch(() => {})
+      })
+    }, 20000)
+    return () => { supabase.removeChannel(channel); clearInterval(poll) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackedKey, id])
+
+  // Retire automatiquement les demandes terminées (jouées/refusées) après un délai
+  useEffect(() => {
+    const terminal = tracked.filter(r => ['played', 'rejected'].includes(r.status))
+    if (!terminal.length) return
+    const timers = terminal.map(r => setTimeout(() => dismissTracked(r.id), 15000))
+    return () => timers.forEach(clearTimeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackedKey])
 
   const searchTracks = useCallback(async (q: string) => {
     if (q.trim().length < 2) { setTracks([]); return }
@@ -255,23 +337,23 @@ export default function SessionPage() {
           request_type: requestType,
           message: message.trim() || null,
           promo_code: promoApplied ? promoCode.trim().toUpperCase() : undefined,
+          client_id: clientIdRef.current || undefined,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      setRequest(data)
-      // Persiste l'ID pour restaurer le tracking après refresh
-      localStorage.setItem(`tipson-req-${id}`, data.id)
-      // Si gratuit, on saute le paiement
+      // Si gratuit, on saute le paiement → la demande est épinglée et on revient
+      // à l'accueil pour continuer à réagir / faire d'autres demandes.
       if (data.amount === 0) {
         await fetch(`/api/requests/${data.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'paid' }),
         })
-        setRequest({ ...data, status: 'paid' })
-        setStep('tracking')
+        addTracked({ ...data, status: 'paid' })
+        resetFlow()
       } else {
+        setRequest(data)
         setStep('payment')
       }
     } catch (err) {
@@ -291,8 +373,8 @@ export default function SessionPage() {
         body: JSON.stringify({ status: 'paid' }),
       })
       const updated = await res.json()
-      setRequest(updated)
-      setStep('tracking')
+      addTracked(updated as Request)
+      resetFlow()
     } finally {
       setConfirming(false)
     }
@@ -619,8 +701,8 @@ export default function SessionPage() {
                 requestId={request.id}
                 amount={amount}
                 onSuccess={(updated) => {
-                  setRequest(updated as Request)
-                  setStep('tracking')
+                  addTracked(updated as Request)
+                  resetFlow()
                 }}
                 onError={(err) => console.error(err)}
               />
@@ -643,6 +725,7 @@ export default function SessionPage() {
     const showExpress = session.express_enabled !== false
     return (
       <main className="min-h-screen flex flex-col bg-gray-950">
+        <ActiveRequests items={tracked} cancelingId={cancelingId} onCancel={cancelTracked} onDismiss={dismissTracked} />
         <div className="sticky top-0 z-10 bg-gray-950/90 backdrop-blur border-b border-white/5 px-5 sm:px-8 py-3.5">
           <div className="flex items-center justify-between max-w-2xl mx-auto">
             <div className="flex items-center gap-2.5">
@@ -885,6 +968,7 @@ export default function SessionPage() {
   // ─── SEARCH (défaut) ──────────────────────────────────────────────
   return (
     <main className="min-h-screen flex flex-col bg-gray-950">
+      <ActiveRequests items={tracked} cancelingId={cancelingId} onCancel={cancelTracked} onDismiss={dismissTracked} />
       {/* Header sticky */}
       <div className="sticky top-0 z-10 bg-gray-950/90 backdrop-blur border-b border-white/5 px-5 sm:px-8 py-3.5">
         <div className="flex items-center justify-between max-w-2xl mx-auto">

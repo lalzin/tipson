@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { formatPrice } from '@/lib/utils'
 import {
   Shield, Loader2, Check, X, Music2, Crown, LogOut, Search, Users,
-  Radio, Mic2, Wallet, TrendingUp, Clock, RefreshCw, Activity, UserPlus, Filter, Percent,
+  Radio, Mic2, Wallet, TrendingUp, Clock, RefreshCw, Activity, UserPlus, Filter, Percent, ListMusic,
 } from 'lucide-react'
 
 interface AdminUser {
@@ -42,6 +42,9 @@ export default function AdminPage() {
   const [commission, setCommission] = useState('')
   const [commissionSaving, setCommissionSaving] = useState(false)
   const [commissionMsg, setCommissionMsg] = useState('')
+  const [maxReq, setMaxReq] = useState('')
+  const [maxReqSaving, setMaxReqSaving] = useState(false)
+  const [maxReqMsg, setMaxReqMsg] = useState('')
 
   async function loadData() {
     const [uRes, sRes, cRes] = await Promise.all([
@@ -52,7 +55,29 @@ export default function AdminPage() {
     if (uRes.status === 403 || uRes.status === 401) { setDenied(true); return }
     if (uRes.ok) setUsers(await uRes.json())
     if (sRes.ok) setStats(await sRes.json())
-    if (cRes.ok) { const d = await cRes.json(); setCommission(String(d.commission_percent ?? '')) }
+    if (cRes.ok) {
+      const d = await cRes.json()
+      setCommission(String(d.commission_percent ?? ''))
+      setMaxReq(String(d.max_requests_per_user ?? ''))
+    }
+  }
+
+  async function saveMaxReq() {
+    setMaxReqSaving(true); setMaxReqMsg('')
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ max_requests_per_user: Number(maxReq) }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(d.error || 'Erreur')
+      setMaxReq(String(d.max_requests_per_user))
+      setMaxReqMsg('Enregistré ✓')
+      setTimeout(() => setMaxReqMsg(''), 2500)
+    } catch (e) {
+      setMaxReqMsg(e instanceof Error ? e.message : 'Erreur')
+    } finally { setMaxReqSaving(false) }
   }
 
   async function saveCommission() {
@@ -262,6 +287,32 @@ export default function AdminPage() {
             Conseil : les frais Stripe fixes (~0,25 € par paiement) pèsent lourd sur les petits montants.
             Une commission de 15 % et un prix minimum de demande protègent ta marge.
           </p>
+        </div>
+
+        {/* ── Limite de demandes simultanées ──────────────────── */}
+        <div className="glass rounded-2xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center">
+              <ListMusic className="w-4 h-4 text-blue-300" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm">Demandes simultanées par personne</h3>
+              <p className="text-gray-500 text-xs">Nombre de demandes en cours (non jouées/refusées) qu&apos;un même participant peut avoir.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="number" min="1" max="20" step="1"
+              value={maxReq}
+              onChange={e => setMaxReq(e.target.value)}
+              className="w-24 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-blue-500 transition"
+            />
+            <button onClick={saveMaxReq} disabled={maxReqSaving || maxReq === ''}
+              className="px-4 py-2.5 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-300 hover:bg-blue-600/30 font-semibold text-sm transition disabled:opacity-40 flex items-center gap-2">
+              {maxReqSaving && <Loader2 className="w-4 h-4 animate-spin" />} Enregistrer
+            </button>
+            {maxReqMsg && <span className="text-xs text-gray-400">{maxReqMsg}</span>}
+          </div>
         </div>
 
         {/* ── Gestion des comptes ─────────────────────────────── */}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
 import { rateLimit, isValidUuid } from '@/lib/rate-limit'
+import { getMaxRequestsPerUser } from '@/lib/platform-settings'
 
 // POST /api/requests — le client crée une demande
 export async function POST(req: NextRequest) {
@@ -24,6 +25,7 @@ export async function POST(req: NextRequest) {
     customer_user_id,
     itunes_url,
   } = body
+  const clientId = body.client_id ? String(body.client_id).slice(0, 64) : null
 
   if (!session_id || !customer_name || !song_name || !artist) {
     return NextResponse.json({ error: 'Champs manquants' }, { status: 400 })
@@ -50,6 +52,32 @@ export async function POST(req: NextRequest) {
   }
 
   const isKaraoke = session.session_type === 'karaoke'
+
+  // Limite de demandes simultanées par utilisateur (hors karaoké : file dédiée).
+  // Compte les demandes non terminées (payées/validées) du même user OU client.
+  if (!isKaraoke && (customer_user_id || clientId)) {
+    const max = await getMaxRequestsPerUser()
+    const counter = createServiceSupabaseClient()
+    let q = counter
+      .from('requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('session_id', session_id)
+      .in('status', ['paid', 'approved'])
+    if (customer_user_id && clientId) {
+      q = q.or(`customer_user_id.eq.${customer_user_id},client_id.eq.${clientId}`)
+    } else if (customer_user_id) {
+      q = q.eq('customer_user_id', customer_user_id)
+    } else {
+      q = q.eq('client_id', clientId)
+    }
+    const { count } = await q
+    if ((count ?? 0) >= max) {
+      return NextResponse.json(
+        { error: `Vous avez déjà ${max} demande${max > 1 ? 's' : ''} en cours. Patientez qu'elles passent avant d'en ajouter.`, limit_reached: true },
+        { status: 409 }
+      )
+    }
+  }
 
   let amount: number
   let finalRequestType: string
@@ -166,6 +194,7 @@ export async function POST(req: NextRequest) {
       customer_email: customer_email || null,
       customer_user_id: customer_user_id || null,
       itunes_url: itunes_url || null,
+      client_id: clientId,
     })
     .select()
     .single()

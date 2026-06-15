@@ -39,3 +39,39 @@ export async function setPlatformCommission(percent: number): Promise<number> {
   cache = { value, at: Date.now() }
   return value
 }
+
+// ── Nombre max de demandes simultanées (non jouées/refusées) par utilisateur ──
+const DEFAULT_MAX_REQUESTS = Number(process.env.MAX_REQUESTS_PER_USER ?? 2)
+let maxCache: { value: number; at: number } | null = null
+
+function clampMax(n: number): number {
+  if (!Number.isFinite(n)) return DEFAULT_MAX_REQUESTS
+  return Math.max(1, Math.min(20, Math.round(n)))
+}
+
+export async function getMaxRequestsPerUser(): Promise<number> {
+  if (maxCache && Date.now() - maxCache.at < TTL) return maxCache.value
+  try {
+    const admin = createServiceSupabaseClient()
+    const { data } = await admin
+      .from('platform_settings')
+      .select('max_requests_per_user')
+      .eq('id', 1)
+      .maybeSingle()
+    const value = data?.max_requests_per_user != null ? clampMax(Number(data.max_requests_per_user)) : DEFAULT_MAX_REQUESTS
+    maxCache = { value, at: Date.now() }
+    return value
+  } catch {
+    return DEFAULT_MAX_REQUESTS
+  }
+}
+
+export async function setMaxRequestsPerUser(n: number): Promise<number> {
+  const value = clampMax(n)
+  const admin = createServiceSupabaseClient()
+  await admin
+    .from('platform_settings')
+    .upsert({ id: 1, max_requests_per_user: value, updated_at: new Date().toISOString() })
+  maxCache = { value, at: Date.now() }
+  return value
+}

@@ -225,3 +225,10 @@ insert into platform_settings (id, commission_percent)
   values (1, 10) on conflict (id) do nothing;
 -- Accès service-role uniquement (lecture/écriture via API admin) : RLS activé sans policy.
 alter table platform_settings enable row level security;
+
+-- Limite de demandes simultanées par utilisateur (réglage admin)
+alter table platform_settings add column if not exists max_requests_per_user integer not null default 2;
+
+-- Identifiant client (anti-spam / limite par appareil, même pour les invités)
+alter table requests add column if not exists client_id text;
+create index if not exists idx_requests_client_active on requests (session_id, client_id) where status in ('paid','approved');
