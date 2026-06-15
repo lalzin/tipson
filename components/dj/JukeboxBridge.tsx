@@ -19,6 +19,9 @@ declare global {
 const MUSICKIT_SRC = 'https://js-cdn.music.apple.com/musickit/v3/musickit.js'
 const DEV_TOKEN = process.env.NEXT_PUBLIC_APPLE_MUSIC_TOKEN || ''
 
+// En session jukebox, les demandes sont de type 'jukebox' (normal) ou 'priority' (express).
+const isJukebox = (r: Request) => r.request_type === 'jukebox' || r.request_type === 'priority'
+
 interface Props {
   sessionId: string
   requests: Request[]
@@ -96,7 +99,7 @@ export default function JukeboxBridge({ sessionId, requests }: Props) {
     if (!music) return
 
     const pending = requests
-      .filter(r => r.request_type === 'jukebox' && r.status === 'paid' && r.spotify_uri && !processedRef.current.has(r.id))
+      .filter(r => isJukebox(r) && r.status === 'paid' && r.spotify_uri && !processedRef.current.has(r.id))
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     if (pending.length === 0) return
 
@@ -105,7 +108,9 @@ export default function JukeboxBridge({ sessionId, requests }: Props) {
       for (const r of pending) {
         processedRef.current.add(r.id)
         try {
-          await music.playNext({ song: String(r.spotify_uri) })
+          // express (passer devant) → joué ensuite ; normal → fin de file
+          if (r.request_type === 'priority') await music.playNext({ song: String(r.spotify_uri) })
+          else await music.playLater({ song: String(r.spotify_uri) })
           // si rien ne joue encore, lance la lecture
           if (!music.isPlaying) { try { await music.play() } catch {} }
           await supabase.from('requests').update({ status: 'approved' }).eq('id', r.id)
@@ -123,7 +128,7 @@ export default function JukeboxBridge({ sessionId, requests }: Props) {
   useEffect(() => { pushQueue() }, [pushQueue])
 
   // ── Vues d'état ─────────────────────────────────────────────────────
-  const jukeboxReqs = requests.filter(r => r.request_type === 'jukebox')
+  const jukeboxReqs = requests.filter(isJukebox)
   const queued = jukeboxReqs.filter(r => r.status === 'approved')
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   const waiting = jukeboxReqs.filter(r => r.status === 'paid')
@@ -225,7 +230,10 @@ function Row({ r, pending }: { r: Request; pending?: boolean }) {
     <div className="glass rounded-xl p-2.5 flex gap-3 items-center">
       {r.album_image && <img src={r.album_image} alt="" className="w-11 h-11 rounded-lg object-cover flex-shrink-0" />}
       <div className="min-w-0 flex-1">
-        <p className="font-medium truncate text-sm">{r.song_name}</p>
+        <p className="font-medium truncate text-sm flex items-center gap-1.5">
+          {r.request_type === 'priority' && <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 flex-shrink-0">⚡ EXPRESS</span>}
+          <span className="truncate">{r.song_name}</span>
+        </p>
         <p className="text-gray-500 text-xs truncate">{r.artist}{r.customer_name ? ` · ${r.customer_name}` : ''}</p>
       </div>
       {pending

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import {
   Music2, Mic2, Zap, QrCode, ShieldCheck, Wallet,
-  ArrowRight, Radio, ListMusic, Sparkles,
+  ArrowRight, Radio, ListMusic, Sparkles, Disc3,
 } from 'lucide-react'
 import LandingNav from '@/components/LandingNav'
 
@@ -32,7 +32,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            La plateforme qui relie le public au DJ et à l&apos;animateur karaoké.
+            La plateforme qui relie le public au DJ, à l&apos;animateur karaoké et au jukebox du lieu.
             Scannez, choisissez votre morceau et faites vibrer la piste en quelques secondes.
           </p>
 
@@ -51,9 +51,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Deux modes ────────────────────────────────────────── */}
+      {/* ── Trois modes ───────────────────────────────────────── */}
       <section className="relative max-w-6xl mx-auto px-5 sm:px-8 py-12 sm:py-20">
-        <div className="grid md:grid-cols-2 gap-5">
+        <h2 className="text-3xl sm:text-4xl font-black text-center mb-3">Trois façons d&apos;animer</h2>
+        <p className="text-gray-500 text-center mb-12">Un seul outil, adapté à chaque ambiance.</p>
+        <div className="grid md:grid-cols-3 gap-5">
           <div className="rounded-3xl p-8 border border-purple-500/20 bg-gradient-to-br from-purple-900/20 to-transparent">
             <div className="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center mb-5">
               <Music2 className="w-7 h-7 text-purple-400" />
@@ -72,6 +74,17 @@ export default function LandingPage() {
             <p className="text-gray-400 mt-2 leading-relaxed">
               Les chanteurs rejoignent une file d&apos;attente, suivent leur position en direct,
               et peuvent payer pour passer devant. À vous le micro !
+            </p>
+          </div>
+          <div className="rounded-3xl p-8 border border-emerald-500/20 bg-gradient-to-br from-emerald-900/20 to-transparent">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center mb-5">
+              <Disc3 className="w-7 h-7 text-emerald-400" />
+            </div>
+            <h3 className="text-2xl font-bold">Mode Jukebox</h3>
+            <p className="text-gray-400 mt-2 leading-relaxed">
+              Sans DJ : le public ajoute ses titres directement à la file qui passe sur
+              <span className="text-emerald-300"> Apple Music</span>. Option express pour
+              être joué juste après le morceau en cours.
             </p>
           </div>
         </div>

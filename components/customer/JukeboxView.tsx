@@ -2,26 +2,40 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Search, Loader2, X, Music2, ListMusic, Check, ChevronRight, Disc3,
+  ArrowLeft, Zap, ShieldCheck,
 } from 'lucide-react'
-import type { Session, SearchTrack } from '@/types'
-import { cn } from '@/lib/utils'
+import type { Session, SearchTrack, Request } from '@/types'
+import { cn, formatPrice } from '@/lib/utils'
+import dynamic from 'next/dynamic'
+
+const StripePaymentForm = dynamic(() => import('@/components/StripePaymentForm'), { ssr: false })
+
+type Step = 'search' | 'option' | 'payment' | 'done'
+interface Added { id: string; name: string; artist: string; image: string | null; express?: boolean }
 
 interface Props {
   session: Session & { profiles: { dj_name: string } }
   sessionId: string
 }
 
-interface Added { id: string; name: string; artist: string; image: string | null }
-
 export default function JukeboxView({ session, sessionId }: Props) {
+  const [step, setStep] = useState<Step>('search')
   const [query, setQuery] = useState('')
   const [tracks, setTracks] = useState<SearchTrack[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
-  const [addingId, setAddingId] = useState<string | null>(null)
+  const [selected, setSelected] = useState<SearchTrack | null>(null)
+  const [isPriority, setIsPriority] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [request, setRequest] = useState<Request | null>(null)
   const [added, setAdded] = useState<Added[]>([])
   const [error, setError] = useState('')
   const [authorName, setAuthorName] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const priceNormal = session.price_normal ?? 0
+  const pricePriority = session.price_priority ?? 0
+  const hasExpress = session.express_enabled !== false && pricePriority > 0
+  const isPaid = priceNormal > 0 || (hasExpress && pricePriority > 0)
 
   useEffect(() => {
     setAuthorName(localStorage.getItem('tipson-pseudo') || '')
@@ -46,8 +60,22 @@ export default function JukeboxView({ session, sessionId }: Props) {
     return () => clearTimeout(t)
   }, [query, searchTracks])
 
-  async function addTrack(track: SearchTrack) {
-    setError(''); setAddingId(track.id)
+  function pushAdded(track: SearchTrack, express: boolean) {
+    const entry: Added = { id: track.id, name: track.name, artist: track.artist, image: track.image, express }
+    const next = [entry, ...added].slice(0, 20)
+    setAdded(next)
+    localStorage.setItem(`tipson-jukebox-${sessionId}`, JSON.stringify(next))
+  }
+
+  function chooseTrack(track: SearchTrack) {
+    setSelected(track)
+    setError('')
+    if (hasExpress) { setStep('option') }
+    else { addToQueue(track, false) }
+  }
+
+  async function addToQueue(track: SearchTrack, express: boolean) {
+    setError(''); setSubmitting(true); setIsPriority(express)
     try {
       const res = await fetch(`/api/sessions/${sessionId}/jukebox/add`, {
         method: 'POST',
@@ -58,20 +86,30 @@ export default function JukeboxView({ session, sessionId }: Props) {
           artist: track.artist,
           album_image: track.image,
           author_name: authorName.trim() || null,
+          is_priority: express,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Ajout impossible')
       if (authorName.trim()) localStorage.setItem('tipson-pseudo', authorName.trim())
-      const entry: Added = { id: track.id, name: track.name, artist: track.artist, image: track.image }
-      const next = [entry, ...added].slice(0, 20)
-      setAdded(next)
-      localStorage.setItem(`tipson-jukebox-${sessionId}`, JSON.stringify(next))
-      setQuery(''); setTracks([])
-      setTimeout(() => inputRef.current?.focus(), 80)
+
+      if (data.status === 'pending_payment' && data.amount > 0) {
+        setRequest(data)
+        setStep('payment')
+      } else {
+        pushAdded(track, express)
+        finishAdd()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur')
-    } finally { setAddingId(null) }
+      setStep('search')
+    } finally { setSubmitting(false) }
+  }
+
+  function finishAdd() {
+    setStep('done')
+    setQuery(''); setTracks([])
+    setTimeout(() => { setSelected(null); setRequest(null); setStep('search'); inputRef.current?.focus() }, 1600)
   }
 
   const sessionEnded = session.status === 'ended'
@@ -96,6 +134,126 @@ export default function JukeboxView({ session, sessionId }: Props) {
     )
   }
 
+  // ── DONE (confirmation flash) ───────────────────────────────────────
+  if (step === 'done') {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center px-6 py-12 bg-gradient-to-b from-emerald-950/30 via-gray-950 to-gray-950 text-center">
+        <div className="w-full max-w-md space-y-5">
+          <div className="w-24 h-24 rounded-3xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto">
+            <Check className="w-12 h-12 text-emerald-400" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-black">Ajouté à la file ! 🎶</h2>
+            <p className="text-gray-400 text-sm mt-1">{selected?.name} passera bientôt sur les enceintes</p>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  // ── PAYMENT ─────────────────────────────────────────────────────────
+  if (step === 'payment' && request && selected) {
+    return (
+      <main className="min-h-screen flex flex-col px-6 pt-12 pb-8 bg-gradient-to-b from-gray-950 via-emerald-950/10 to-gray-950">
+        <button onClick={() => setStep(hasExpress ? 'option' : 'search')} className="flex items-center gap-1 text-gray-400 hover:text-white mb-8 transition text-sm">
+          <ArrowLeft className="w-4 h-4" /> Retour
+        </button>
+        <div className="flex-1 flex flex-col items-center justify-center space-y-5 max-w-md mx-auto w-full">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold">Ajouter à la file</h2>
+            <p className="text-gray-400 text-sm mt-1">{isPriority ? '⚡ Passer devant' : 'File normale'}</p>
+          </div>
+          <div className="w-full glass rounded-2xl p-4 space-y-3">
+            <div className="flex gap-3 items-center">
+              {selected.image && <img src={selected.image} alt="" className="w-14 h-14 rounded-xl object-cover" />}
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold truncate">{selected.name}</p>
+                <p className="text-gray-400 text-sm truncate">{selected.artist}</p>
+              </div>
+            </div>
+            <div className="border-t border-white/10 pt-3 flex justify-between items-center">
+              <span className="text-gray-400 text-sm">{isPriority ? '⚡ Passer devant la file' : '🎶 Ajouter à la file'}</span>
+              <span className={cn('font-bold text-xl', isPriority && 'text-yellow-300')}>{formatPrice(request.amount)}</span>
+            </div>
+          </div>
+          <div className="w-full">
+            <StripePaymentForm
+              requestId={request.id}
+              amount={request.amount}
+              onSuccess={() => { pushAdded(selected, isPriority); finishAdd() }}
+              onError={(err) => console.error(err)}
+            />
+          </div>
+          <div className="flex items-center gap-2 text-gray-600 text-xs">
+            <ShieldCheck className="w-4 h-4 text-green-600" />
+            Débité seulement à la confirmation
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  // ── OPTION (normale vs express) ─────────────────────────────────────
+  if (step === 'option' && selected) {
+    return (
+      <main className="min-h-screen flex flex-col px-6 pt-12 pb-8 bg-gradient-to-b from-gray-950 via-emerald-950/10 to-gray-950">
+        <button onClick={() => { setStep('search'); setSelected(null) }} className="flex items-center gap-1 text-gray-400 hover:text-white mb-8 transition text-sm">
+          <ArrowLeft className="w-4 h-4" /> Retour
+        </button>
+        <div className="flex-1 flex flex-col space-y-6 max-w-md mx-auto w-full">
+          <div>
+            <h2 className="text-2xl font-bold">Comment l&apos;ajouter ?</h2>
+            <p className="text-gray-400 text-sm mt-1">Choisissez votre option</p>
+          </div>
+          <div className="glass rounded-2xl p-3 flex gap-3 items-center">
+            {selected.image && <img src={selected.image} alt="" className="w-12 h-12 rounded-xl object-cover" />}
+            <div className="min-w-0">
+              <p className="font-medium truncate text-sm">{selected.name}</p>
+              <p className="text-gray-400 text-xs truncate">{selected.artist}</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <button onClick={() => addToQueue(selected, false)} disabled={submitting}
+              className="w-full glass rounded-2xl p-5 text-left hover:bg-white/8 border hover:border-emerald-500/40 transition active:scale-[0.98] disabled:opacity-50">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex gap-4 items-center">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                    <ListMusic className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-base">Ajouter à la file</p>
+                    <p className="text-gray-400 text-sm mt-0.5">Passera dans l&apos;ordre</p>
+                  </div>
+                </div>
+                <p className="font-black text-2xl text-emerald-300 flex-shrink-0">{priceNormal > 0 ? formatPrice(priceNormal) : 'Gratuit'}</p>
+              </div>
+            </button>
+            <button onClick={() => addToQueue(selected, true)} disabled={submitting}
+              className="w-full rounded-2xl p-5 text-left transition active:scale-[0.98] relative overflow-hidden border border-yellow-500/30 hover:border-yellow-400/50 disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg, rgba(234,179,8,0.10) 0%, rgba(249,115,22,0.06) 100%)' }}>
+              <div className="absolute top-0 right-0 bg-gradient-to-l from-yellow-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">EXPRESS</div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex gap-4 items-center">
+                  <div className="w-12 h-12 rounded-2xl bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center flex-shrink-0">
+                    <Zap className="w-6 h-6 text-yellow-400" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-base">Passer devant</p>
+                    <p className="text-gray-400 text-sm mt-0.5">Joué juste après le titre en cours</p>
+                  </div>
+                </div>
+                <p className="font-black text-2xl text-yellow-300 flex-shrink-0">{formatPrice(pricePriority)}</p>
+              </div>
+            </button>
+          </div>
+          {submitting && <p className="text-center text-gray-500 text-sm flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> …</p>}
+          {isPaid && <p className="text-center text-gray-600 text-xs">Paiement sécurisé par Stripe · débité seulement si confirmé</p>}
+        </div>
+      </main>
+    )
+  }
+
+  // ── SEARCH ───────────────────────────────────────────────────────────
   return (
     <main className="min-h-screen flex flex-col bg-gray-950">
       <div className="sticky top-0 z-10 bg-gray-950/90 backdrop-blur border-b border-white/5 px-5 sm:px-8 py-3.5">
@@ -121,6 +279,7 @@ export default function JukeboxView({ session, sessionId }: Props) {
           <h1 className="text-2xl sm:text-3xl font-bold">Mets ta chanson 🎶</h1>
           <p className="text-gray-400 text-sm sm:text-base mt-0.5">
             Ajoute un titre à la file — il passera sur les enceintes du lieu.
+            {isPaid && <span className="text-emerald-400"> {priceNormal > 0 ? `À partir de ${formatPrice(priceNormal)}.` : ''}</span>}
           </p>
         </div>
 
@@ -153,16 +312,14 @@ export default function JukeboxView({ session, sessionId }: Props) {
         {tracks.length > 0 && (
           <div className="grid gap-2 sm:grid-cols-2">
             {tracks.map(track => (
-              <button key={track.id} onClick={() => addTrack(track)} disabled={addingId === track.id}
+              <button key={track.id} onClick={() => chooseTrack(track)} disabled={submitting}
                 className="w-full glass rounded-2xl p-3 flex gap-3 items-center hover:bg-white/8 active:scale-[0.98] transition text-left group disabled:opacity-50">
                 {track.image && <img src={track.image} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />}
                 <div className="min-w-0 flex-1">
                   <p className="font-medium truncate text-sm">{track.name}</p>
                   <p className="text-gray-400 text-xs truncate">{track.artist}</p>
                 </div>
-                {addingId === track.id
-                  ? <Loader2 className="w-4 h-4 text-emerald-400 animate-spin flex-shrink-0" />
-                  : <ChevronRight className="w-4 h-4 text-gray-600 flex-shrink-0 group-hover:text-emerald-400 transition" />}
+                <ChevronRight className="w-4 h-4 text-gray-600 flex-shrink-0 group-hover:text-emerald-400 transition" />
               </button>
             ))}
           </div>
@@ -184,7 +341,10 @@ export default function JukeboxView({ session, sessionId }: Props) {
               <div key={`${a.id}-${i}`} className="glass rounded-xl p-2.5 flex gap-3 items-center">
                 {a.image && <img src={a.image} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />}
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium truncate text-sm">{a.name}</p>
+                  <p className="font-medium truncate text-sm flex items-center gap-1.5">
+                    {a.express && <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300">⚡</span>}
+                    <span className="truncate">{a.name}</span>
+                  </p>
                   <p className="text-gray-500 text-xs truncate">{a.artist}</p>
                 </div>
                 <span className="text-emerald-400 text-xs font-medium flex items-center gap-1">

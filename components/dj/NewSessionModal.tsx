@@ -46,8 +46,14 @@ export default function NewSessionModal({ onClose, onCreate }: Props) {
       if (pKaraoke < 0 || pKaraokePriority < 0) { setError('Le prix ne peut pas être négatif'); setLoading(false); return }
       if (pKaraokePriority > 0 && pKaraokePriority <= pKaraoke) { setError('Le prix "Passer devant" doit être supérieur au prix normal'); setLoading(false); return }
       body = { ...body, price_karaoke: pKaraoke, price_karaoke_priority: pKaraokePriority, express_enabled: expressEnabled }
+    } else if (sessionType === 'jukebox') {
+      // jukebox : price_normal = ajouter à la file, price_priority = express (passer devant)
+      const pNormal = Math.round(parseFloat(priceNormal || '0') * 100)
+      const pPriority = Math.round(parseFloat(pricePriority || '0') * 100)
+      if (pNormal < 0 || pPriority < 0) { setError('Le prix ne peut pas être négatif'); setLoading(false); return }
+      if (expressEnabled && pPriority > 0 && pPriority <= pNormal) { setError('Le prix "Express" doit être supérieur au prix d\'ajout'); setLoading(false); return }
+      body = { ...body, price_normal: pNormal, price_priority: expressEnabled ? pPriority : 0, express_enabled: expressEnabled }
     }
-    // jukebox : aucun tarif, ajout libre à la file
 
     const res = await fetch('/api/sessions', {
       method: 'POST',
@@ -236,8 +242,29 @@ export default function NewSessionModal({ onClose, onCreate }: Props) {
             </div>
           )}
 
-          {/* Mode express (option prioritaire payante) — pas pour le jukebox */}
-          {sessionType !== 'jukebox' && (
+          {/* Tarifs Jukebox */}
+          {sessionType === 'jukebox' && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">Tarif d&apos;ajout à la file</label>
+              <div className="bg-emerald-500/8 border border-emerald-500/20 rounded-2xl p-3 space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <ListMusic className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-300 text-xs font-semibold">Ajouter un morceau</span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="number" value={priceNormal} onChange={e => setPriceNormal(e.target.value)}
+                    min="0" step="0.50"
+                    className="w-full pl-4 pr-7 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-emerald-500 transition"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-400 text-sm font-bold">€</span>
+                </div>
+              </div>
+              <p className="text-gray-600 text-xs pl-1">0€ = jukebox gratuit · l&apos;option express se règle ci-dessous</p>
+            </div>
+          )}
+
+          {/* Mode express (option prioritaire payante) */}
           <button
             type="button"
             onClick={() => setExpressEnabled(v => !v)}
@@ -256,6 +283,24 @@ export default function NewSessionModal({ onClose, onCreate }: Props) {
               <div className={cn('w-5 h-5 rounded-full bg-white transition-transform', expressEnabled ? 'translate-x-5' : 'translate-x-0')} />
             </div>
           </button>
+
+          {/* Prix express jukebox (passer devant → joué ensuite) */}
+          {sessionType === 'jukebox' && expressEnabled && (
+            <div className="bg-yellow-500/8 border border-yellow-500/20 rounded-2xl p-3 space-y-2">
+              <div className="flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-yellow-400" />
+                <span className="text-yellow-300 text-xs font-semibold">Passer devant (express)</span>
+              </div>
+              <div className="relative">
+                <input
+                  type="number" value={pricePriority} onChange={e => setPricePriority(e.target.value)}
+                  min="0" step="0.50"
+                  className="w-full pl-4 pr-7 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-yellow-500 transition"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-yellow-400 text-sm font-bold">€</span>
+              </div>
+              <p className="text-gray-600 text-xs">Le morceau est joué juste après le titre en cours</p>
+            </div>
           )}
 
           {error && (

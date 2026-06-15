@@ -61,7 +61,7 @@ function JoinForm() {
           </div>
           <div>
             <h1 className="text-3xl font-black tracking-tight">TIPSON</h1>
-            <p className="text-gray-500 text-sm mt-1">Demandez vos sons au DJ</p>
+            <p className="text-gray-500 text-sm mt-1">Demandez vos sons : DJ, karaoké ou jukebox</p>
           </div>
         </div>
 
