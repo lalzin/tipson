@@ -103,61 +103,90 @@
 }
 .dj-anim { animation: djGlow 2.6s ease-in-out infinite; }
 
-/* Fonds rythmiques configurables — accélérés */
-@keyframes bgWaves {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
+/* ── Fonds rythmiques — pilotés par les couleurs du thème (--c1 / --c2) ── */
+/* On mélange les couleurs avec du noir pour garder un fond sombre lisible. */
+
+/* Vagues : dégradé fluide */
+@keyframes bgWaves { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
 .bg-waves {
-  background: linear-gradient(120deg, #1e1b4b, #4c1d95, #831843, #1e1b4b, #312e81);
+  background: linear-gradient(120deg,
+    color-mix(in srgb, var(--c1) 65%, #07060f),
+    color-mix(in srgb, var(--c2) 60%, #07060f),
+    #07060f,
+    color-mix(in srgb, var(--c1) 55%, #07060f),
+    color-mix(in srgb, var(--c2) 50%, #0a0a14));
   background-size: 400% 400%;
   animation: bgWaves 7s ease infinite;
 }
-@keyframes bgPulse {
-  0%, 100% { opacity: 0.55; transform: scale(1); }
-  50%      { opacity: 1; transform: scale(1.18); }
-}
-.bg-pulse-orb {
-  position: absolute; border-radius: 9999px; filter: blur(80px);
-  animation: bgPulse 2.2s ease-in-out infinite;
-}
-@keyframes bgDrift {
-  0%   { transform: translate(0,0); }
-  50%  { transform: translate(50px,-36px); }
-  100% { transform: translate(0,0); }
-}
+
+/* Pulse : orbes qui respirent */
+@keyframes bgPulse { 0%,100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.18); } }
+.bg-pulse-orb { position: absolute; border-radius: 9999px; filter: blur(90px); animation: bgPulse 2.2s ease-in-out infinite; }
+
+/* Particules */
+@keyframes bgDrift { 0%,100% { transform: translate(0,0); } 50% { transform: translate(50px,-36px); } }
 .bg-particle { position: absolute; border-radius: 9999px; animation: bgDrift 4.5s ease-in-out infinite; }
 
-/* Aurora : voiles de lumière qui ondulent */
+/* Aurora : voiles de lumière */
 @keyframes bgAurora {
   0%   { transform: translateX(-15%) skewX(-8deg); opacity: 0.5; }
   50%  { transform: translateX(15%) skewX(8deg); opacity: 0.9; }
   100% { transform: translateX(-15%) skewX(-8deg); opacity: 0.5; }
 }
-.bg-aurora-base { background: radial-gradient(circle at 50% 120%, #1e1b4b, #0a0a0a 70%); }
-.bg-aurora-veil {
-  position: absolute; inset: -20%; filter: blur(60px); mix-blend-mode: screen;
-  animation: bgAurora 4s ease-in-out infinite;
+.bg-aurora-base { background: radial-gradient(circle at 50% 120%, color-mix(in srgb, var(--c1) 30%, #07060f), #07060f 70%); }
+.bg-aurora-veil { position: absolute; inset: -20%; filter: blur(60px); mix-blend-mode: screen; animation: bgAurora 4s ease-in-out infinite; }
+
+/* Néon : grille synthwave */
+@keyframes bgNeonScroll { 0% { background-position: 0 0; } 100% { background-position: 0 60px; } }
+.bg-neon {
+  background-color: #07030f;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--c1) 50%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--c2) 45%, transparent) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: bgNeonScroll 1.6s linear infinite;
 }
 
-/* Neon : grille qui défile + lueur */
-@keyframes bgNeonScroll {
-  0%   { background-position: 0 0; }
-  100% { background-position: 0 60px; }
+/* Mesh liquide : dégradés radiaux qui se déplacent (très qualitatif) */
+@keyframes bgMesh {
+  0%,100% { background-position: 0% 0%, 100% 0%, 0% 100%, 100% 100%; }
+  50%     { background-position: 35% 25%, 65% 35%, 25% 75%, 75% 55%; }
 }
-@keyframes bgNeonHue {
-  0%, 100% { filter: hue-rotate(0deg); }
-  50%      { filter: hue-rotate(60deg); }
-}
-.bg-neon {
-  background-color: #0a0a18;
+.bg-mesh {
+  background-color: #07060f;
   background-image:
-    linear-gradient(rgba(168,85,247,0.35) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(236,72,153,0.30) 1px, transparent 1px);
-  background-size: 60px 60px;
-  animation: bgNeonScroll 1.6s linear infinite, bgNeonHue 5s ease-in-out infinite;
+    radial-gradient(at 20% 30%, color-mix(in srgb, var(--c1) 60%, transparent), transparent 45%),
+    radial-gradient(at 80% 20%, color-mix(in srgb, var(--c2) 60%, transparent), transparent 45%),
+    radial-gradient(at 45% 80%, color-mix(in srgb, var(--c1) 45%, transparent), transparent 50%),
+    radial-gradient(at 75% 65%, color-mix(in srgb, var(--c2) 45%, transparent), transparent 45%);
+  background-size: 180% 180%;
+  animation: bgMesh 12s ease-in-out infinite;
 }
+
+/* Rayons club : faisceaux qui tournent depuis le centre */
+@keyframes bgSpin { to { transform: rotate(360deg); } }
+.bg-rays-spin {
+  position: absolute; inset: -60%;
+  background: conic-gradient(from 0deg,
+    transparent 0deg, color-mix(in srgb, var(--c1) 40%, transparent) 8deg, transparent 22deg,
+    transparent 60deg, color-mix(in srgb, var(--c2) 36%, transparent) 70deg, transparent 84deg,
+    transparent 140deg, color-mix(in srgb, var(--c1) 34%, transparent) 150deg, transparent 164deg,
+    transparent 230deg, color-mix(in srgb, var(--c2) 32%, transparent) 240deg, transparent 254deg);
+  filter: blur(6px);
+  animation: bgSpin 9s linear infinite;
+}
+
+/* Bokeh : lumières de fête qui scintillent */
+@keyframes bgBokeh { 0%,100% { opacity: 0.25; transform: translateY(0) scale(1); } 50% { opacity: 0.85; transform: translateY(-22px) scale(1.25); } }
+.bg-bokeh-orb { position: absolute; border-radius: 9999px; filter: blur(10px); animation: bgBokeh ease-in-out infinite; }
+
+/* Équaliseur : barres de musique qui pulsent en bas */
+@keyframes bgEq { 0%,100% { transform: scaleY(0.18); } 50% { transform: scaleY(1); } }
+.bg-eq-bar { position: absolute; bottom: 0; border-radius: 6px 6px 0 0; transform-origin: bottom; animation: bgEq ease-in-out infinite; }
+
+/* Confettis : chute festive */
+@keyframes bgConfetti { 0% { transform: translateY(-12vh) rotate(0); opacity: 1; } 100% { transform: translateY(112vh) rotate(720deg); opacity: 0.85; } }
+.bg-confetti { position: absolute; top: 0; width: 10px; height: 14px; border-radius: 2px; animation: bgConfetti linear infinite; }
 
 /* Pop d'emoji plus marqué */
 @keyframes floatUpBig {

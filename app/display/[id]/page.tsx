@@ -80,24 +80,27 @@ export default function DisplayPage() {
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&bgcolor=0a0a0a&color=ffffff&qzone=1&data=${encodeURIComponent(joinUrl)}`
   const tickerMsgs = messages.length ? messages : [{ id: 'x', text: 'Envoyez vos messages et vos ❤️ depuis votre téléphone', author_name: null } as any]
 
+  const cssVars = { ['--c1' as any]: c1, ['--c2' as any]: c2 } as React.CSSProperties
+  const cssBg = bg === 'waves' ? 'bg-waves' : bg === 'neon' ? 'bg-neon' : bg === 'mesh' ? 'bg-mesh'
+    : bg === 'aurora' ? 'bg-aurora-base' : 'bg-gray-950'
+
   return (
-    <main className={`relative h-screen w-screen overflow-hidden text-white ${
-      bg === 'waves' ? 'bg-waves' : bg === 'neon' ? 'bg-neon' : bg === 'aurora' ? 'bg-aurora-base' : 'bg-gray-950'
-    }`}>
+    <main style={cssVars} className={`relative h-screen w-screen overflow-hidden text-white ${cssBg}`}>
       {/* Fonds alternatifs */}
       {bg === 'pulse' && (
         <div className="absolute inset-0 pointer-events-none">
-          <div className="bg-pulse-orb" style={{ width: 500, height: 500, top: '10%', left: '15%', background: '#7c3aed' }} />
-          <div className="bg-pulse-orb" style={{ width: 460, height: 460, bottom: '8%', right: '12%', background: '#db2777', animationDelay: '1.2s' }} />
+          <div className="bg-pulse-orb" style={{ width: 520, height: 520, top: '8%', left: '12%', background: c1 }} />
+          <div className="bg-pulse-orb" style={{ width: 480, height: 480, bottom: '6%', right: '10%', background: c2, animationDelay: '1.1s' }} />
+          <div className="bg-pulse-orb" style={{ width: 360, height: 360, top: '40%', left: '55%', background: c1, animationDelay: '0.6s' }} />
         </div>
       )}
       {bg === 'particles' && (
         <div className="absolute inset-0 pointer-events-none">
-          {Array.from({ length: 24 }).map((_, i) => (
+          {Array.from({ length: 28 }).map((_, i) => (
             <div key={i} className="bg-particle" style={{
-              width: 8 + (i % 5) * 4, height: 8 + (i % 5) * 4,
+              width: 8 + (i % 5) * 5, height: 8 + (i % 5) * 5,
               top: `${(i * 37) % 100}%`, left: `${(i * 53) % 100}%`,
-              background: i % 2 ? 'rgba(168,85,247,0.5)' : 'rgba(236,72,153,0.45)',
+              background: i % 2 ? c1 : c2, opacity: 0.5, filter: 'blur(1px)',
               animationDelay: `${i * 0.3}s`,
             }} />
           ))}
@@ -105,12 +108,52 @@ export default function DisplayPage() {
       )}
       {bg === 'aurora' && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="bg-aurora-veil" style={{ background: 'linear-gradient(90deg, transparent, #7c3aed, transparent)' }} />
-          <div className="bg-aurora-veil" style={{ background: 'linear-gradient(90deg, transparent, #db2777, transparent)', animationDelay: '1.3s' }} />
-          <div className="bg-aurora-veil" style={{ background: 'linear-gradient(90deg, transparent, #2563eb, transparent)', animationDelay: '2.1s' }} />
+          <div className="bg-aurora-veil" style={{ background: `linear-gradient(90deg, transparent, ${c1}, transparent)` }} />
+          <div className="bg-aurora-veil" style={{ background: `linear-gradient(90deg, transparent, ${c2}, transparent)`, animationDelay: '1.3s' }} />
+          <div className="bg-aurora-veil" style={{ background: `linear-gradient(90deg, transparent, ${c1}, transparent)`, animationDelay: '2.1s' }} />
         </div>
       )}
-      <div className="absolute inset-0 bg-black/20 pointer-events-none" />
+      {bg === 'rays' && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="bg-rays-spin" />
+        </div>
+      )}
+      {bg === 'bokeh' && (
+        <div className="absolute inset-0 pointer-events-none">
+          {Array.from({ length: 16 }).map((_, i) => (
+            <div key={i} className="bg-bokeh-orb" style={{
+              width: 30 + (i % 6) * 18, height: 30 + (i % 6) * 18,
+              top: `${(i * 41) % 95}%`, left: `${(i * 67) % 95}%`,
+              background: i % 2 ? c1 : c2,
+              animationDuration: `${2.5 + (i % 4)}s`, animationDelay: `${i * 0.25}s`,
+            }} />
+          ))}
+        </div>
+      )}
+      {bg === 'equalizer' && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {Array.from({ length: 44 }).map((_, i) => (
+            <div key={i} className="bg-eq-bar" style={{
+              left: `${(i / 44) * 100}%`, width: `${100 / 44 - 0.4}%`,
+              height: `${30 + (i % 7) * 8}vh`,
+              background: `linear-gradient(to top, ${c1}, ${c2})`, opacity: 0.55,
+              animationDuration: `${0.6 + (i % 5) * 0.18}s`, animationDelay: `${(i % 9) * 0.08}s`,
+            }} />
+          ))}
+        </div>
+      )}
+      {bg === 'confetti' && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {Array.from({ length: 36 }).map((_, i) => (
+            <div key={i} className="bg-confetti" style={{
+              left: `${(i * 53) % 100}%`,
+              background: i % 3 === 0 ? c1 : i % 3 === 1 ? c2 : '#ffffff',
+              animationDuration: `${3 + (i % 5) * 0.7}s`, animationDelay: `${(i % 10) * 0.4}s`,
+            }} />
+          ))}
+        </div>
+      )}
+      <div className="absolute inset-0 bg-black/25 pointer-events-none" />
 
       {/* Badge beta */}
       <div className="absolute top-4 right-4 z-30 text-xs px-2.5 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30 text-yellow-200">

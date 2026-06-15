@@ -14,7 +14,7 @@ import KaraokeQueue from '@/components/dj/KaraokeQueue'
 import MusicLinks from '@/components/dj/MusicLinks'
 import BlacklistModal from '@/components/dj/BlacklistModal'
 import PromoCodesModal from '@/components/dj/PromoCodesModal'
-import { DISPLAY_THEMES, EMOJI_PALETTE, displayEmojis } from '@/lib/displayThemes'
+import { DISPLAY_THEMES, EMOJI_PALETTE, displayEmojis, BG_OPTIONS } from '@/lib/displayThemes'
 
 type FilterStatus = 'paid' | 'approved' | 'played' | 'rejected' | 'all'
 
@@ -654,15 +654,11 @@ export default function DJSessionPage() {
               <div className="space-y-1.5 pt-1">
                 <label className="text-gray-500 text-xs">Animation de fond</label>
                 <select
-                  value={(session as any).display_bg ?? 'waves'}
+                  value={(session as any).display_bg ?? 'mesh'}
                   onChange={e => updateConfig({ display_bg: e.target.value })}
                   className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-500 transition"
                 >
-                  <option value="waves">Vagues</option>
-                  <option value="pulse">Pulse</option>
-                  <option value="particles">Particules</option>
-                  <option value="aurora">Aurore</option>
-                  <option value="neon">Néon</option>
+                  {BG_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
                 </select>
               </div>
             )}
