@@ -7,6 +7,8 @@ export function searchLinks(song: string, artist: string): MusicLinks {
     spotify: `https://open.spotify.com/search/${q}`,
     deezer: `https://www.deezer.com/search/${q}`,
     appleMusic: `https://music.apple.com/search?term=${q}`,
+    // Odesli ne fournit pas Beatport → lien de recherche (utile pour les DJ).
+    beatport: `https://www.beatport.com/search?q=${q}`,
   }
 }
 
@@ -18,6 +20,7 @@ export function mergeWithSearch(exact: MusicLinks | null, song: string, artist: 
     deezer: exact?.deezer || fallback.deezer,
     appleMusic: exact?.appleMusic || fallback.appleMusic,
     youtube: exact?.youtube,
+    beatport: exact?.beatport || fallback.beatport,
   }
 }
 

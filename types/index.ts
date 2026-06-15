@@ -85,6 +85,7 @@ export interface MusicLinks {
   deezer?: string
   appleMusic?: string
   youtube?: string
+  beatport?: string
 }
 
 export interface PromoCode {

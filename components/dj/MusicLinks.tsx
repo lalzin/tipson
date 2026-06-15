@@ -24,6 +24,7 @@ export default function MusicLinks({ requestId, cached }: { requestId: string; c
     { label: 'Spotify', href: links.spotify, cls: 'text-green-400 hover:bg-green-500/15 border-green-500/20' },
     { label: 'Deezer', href: links.deezer, cls: 'text-pink-300 hover:bg-pink-500/15 border-pink-500/20' },
     { label: 'Apple', href: links.appleMusic, cls: 'text-gray-200 hover:bg-white/10 border-white/15' },
+    { label: 'Beatport', href: links.beatport, cls: 'text-lime-300 hover:bg-lime-500/15 border-lime-500/20' },
   ].filter(i => i.href)
 
   if (items.length === 0) return null
