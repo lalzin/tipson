@@ -64,7 +64,7 @@ export default function InteractionBar({ sessionId, displayEnabled, messagesEnab
   }
 
   async function sendSuper() {
-    if (!text.trim()) { setFeedback('Écrivez d\'abord votre message'); return }
+    if (!text.trim()) { setFeedback('Écris un message pour envoyer un super message'); return }
     if (superPrice > 0) { setShowSuper(true); return }
     // Gratuit → publication directe (modérée côté serveur)
     setSending(true); setFeedback('')
