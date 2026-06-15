@@ -730,24 +730,26 @@ export default function SessionPage() {
     const showExpress = session.express_enabled !== false
     return (
       <main className="min-h-screen flex flex-col bg-gray-950">
-        <ActiveRequests items={tracked} cancelingId={cancelingId} onCancel={cancelTracked} onDismiss={dismissTracked} />
-        <div className="sticky top-0 z-10 bg-gray-950/90 backdrop-blur border-b border-white/5 px-5 sm:px-8 py-3.5">
+        <div className="sticky top-0 z-20 bg-gray-950/90 backdrop-blur border-b border-white/5 px-5 sm:px-8 py-3.5">
           <div className="flex items-center justify-between max-w-2xl mx-auto">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-purple-600/20 border border-purple-500/25 flex items-center justify-center">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-purple-600/20 border border-purple-500/25 flex items-center justify-center flex-shrink-0">
                 <Music2 className="w-4 h-4 text-purple-400" />
               </div>
-              <div>
-                <p className="font-bold text-sm leading-none">{session.profiles?.dj_name ?? 'DJ'}</p>
-                <p className="text-gray-500 text-xs mt-0.5 leading-none">{session.name}</p>
+              <div className="min-w-0">
+                <p className="font-bold text-sm leading-none truncate">{session.profiles?.dj_name ?? 'DJ'}</p>
+                <p className="text-gray-500 text-xs mt-0.5 leading-none truncate">{session.name}</p>
               </div>
             </div>
-            {user && (
-              <a href="/account" className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 rounded-xl px-2.5 py-1.5 transition">
-                <UserIcon className="w-3.5 h-3.5 text-purple-400" />
-                <span className="text-xs text-gray-300 max-w-[80px] truncate">{user.email ? user.email.split('@')[0] : 'Compte'}</span>
-              </a>
-            )}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <ActiveRequests items={tracked} cancelingId={cancelingId} onCancel={cancelTracked} onDismiss={dismissTracked} />
+              {user && (
+                <a href="/account" className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 rounded-xl px-2.5 py-1.5 transition">
+                  <UserIcon className="w-3.5 h-3.5 text-purple-400" />
+                  <span className="text-xs text-gray-300 max-w-[80px] truncate hidden sm:inline">{user.email ? user.email.split('@')[0] : 'Compte'}</span>
+                </a>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1015,21 +1017,21 @@ export default function SessionPage() {
   // ─── SEARCH (défaut) ──────────────────────────────────────────────
   return (
     <main className="min-h-screen flex flex-col bg-gray-950">
-      <ActiveRequests items={tracked} cancelingId={cancelingId} onCancel={cancelTracked} onDismiss={dismissTracked} />
       {/* Header sticky */}
-      <div className="sticky top-0 z-10 bg-gray-950/90 backdrop-blur border-b border-white/5 px-5 sm:px-8 py-3.5">
+      <div className="sticky top-0 z-20 bg-gray-950/90 backdrop-blur border-b border-white/5 px-5 sm:px-8 py-3.5">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-purple-600/20 border border-purple-500/25 flex items-center justify-center">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-purple-600/20 border border-purple-500/25 flex items-center justify-center flex-shrink-0">
               <Music2 className="w-4 h-4 text-purple-400" />
             </div>
-            <div>
-              <p className="font-bold text-sm leading-none">{session.profiles?.dj_name ?? 'DJ'}</p>
-              <p className="text-gray-500 text-xs mt-0.5 leading-none">{session.name}</p>
+            <div className="min-w-0">
+              <p className="font-bold text-sm leading-none truncate">{session.profiles?.dj_name ?? 'DJ'}</p>
+              <p className="text-gray-500 text-xs mt-0.5 leading-none truncate">{session.name}</p>
             </div>
           </div>
-          {/* Compte connecté */}
-          <div className="flex items-center gap-2">
+          {/* Demandes en cours + compte connecté */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <ActiveRequests items={tracked} cancelingId={cancelingId} onCancel={cancelTracked} onDismiss={dismissTracked} />
             {user ? (
               <div className="flex items-center gap-1.5">
                 <a href="/account" title="Mon compte & participations"
