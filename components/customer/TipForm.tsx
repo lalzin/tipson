@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import { Loader2, Heart, X, ArrowLeft } from 'lucide-react'
+import { Loader2, Heart, ArrowLeft } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -73,12 +73,13 @@ export default function TipForm({ sessionId, authorName, onSuccess, onClose }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm px-4 pb-4 sm:pb-0"
-      onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="w-full max-w-md bg-gray-900 border border-white/10 rounded-3xl p-6 space-y-5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold flex items-center gap-2"><Heart className="w-5 h-5 text-amber-400" /> Pourboire au chapeau</h2>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition"><X className="w-5 h-5" /></button>
+    <main className="fixed inset-0 z-50 overflow-y-auto bg-gradient-to-b from-gray-950 via-amber-950/10 to-gray-950">
+      <div className="min-h-full flex flex-col px-6 pt-8 pb-10 max-w-md mx-auto w-full space-y-5">
+        <button onClick={onClose} className="flex items-center gap-1 text-gray-400 hover:text-white transition text-sm self-start">
+          <ArrowLeft className="w-4 h-4" /> Retour
+        </button>
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2"><Heart className="w-5 h-5 text-amber-400" /> Pourboire au chapeau</h2>
         </div>
 
         {!clientSecret ? (
@@ -116,6 +117,6 @@ export default function TipForm({ sessionId, authorName, onSuccess, onClose }: {
           </Elements>
         )}
       </div>
-    </div>
+    </main>
   )
 }
