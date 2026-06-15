@@ -232,3 +232,21 @@ alter table platform_settings add column if not exists max_requests_per_user int
 -- Identifiant client (anti-spam / limite par appareil, même pour les invités)
 alter table requests add column if not exists client_id text;
 create index if not exists idx_requests_client_active on requests (session_id, client_id) where status in ('paid','approved');
+
+-- ════════════════ Lot fonctionnalités (tips, votes) ════════════════
+-- Pourboire libre « au chapeau » : nouveau type de demande
+alter table requests drop constraint if exists requests_request_type_check;
+alter table requests add constraint requests_request_type_check
+  check (request_type in ('normal', 'priority', 'karaoke', 'blacklist', 'jukebox', 'tip'));
+
+-- Mur de votes : compteur de likes sur les demandes
+alter table requests add column if not exists votes integer not null default 0;
+
+-- Anti double-vote (un like par appareil et par demande)
+create table if not exists request_votes (
+  request_id uuid not null references requests(id) on delete cascade,
+  client_id text not null,
+  created_at timestamptz not null default now(),
+  primary key (request_id, client_id)
+);
+alter table request_votes enable row level security;

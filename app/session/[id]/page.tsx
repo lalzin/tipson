@@ -16,6 +16,8 @@ import KaraokeView from '@/components/customer/KaraokeView'
 import JukeboxView from '@/components/customer/JukeboxView'
 import InteractionBar from '@/components/customer/InteractionBar'
 import ActiveRequests from '@/components/customer/ActiveRequests'
+import TipForm from '@/components/customer/TipForm'
+import VoteWall from '@/components/customer/VoteWall'
 import { Flame } from 'lucide-react'
 import { displayEmojis } from '@/lib/displayThemes'
 
@@ -57,6 +59,9 @@ export default function SessionPage() {
   const [cancelled, setCancelled] = useState(false)
   const [tracked, setTracked] = useState<Request[]>([])
   const [cancelingId, setCancelingId] = useState<string | null>(null)
+  const [showTip, setShowTip] = useState(false)
+  const [showWall, setShowWall] = useState(false)
+  const [tipThanks, setTipThanks] = useState(false)
   const clientIdRef = useRef<string>('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -812,8 +817,48 @@ export default function SessionPage() {
                 </div>
               </button>
             )}
+
+            {/* La foule décide (mur de votes) */}
+            <button onClick={() => setShowWall(true)}
+              className="w-full glass rounded-2xl p-4 text-left hover:bg-white/8 border hover:border-orange-500/40 transition active:scale-[0.98]">
+              <div className="flex gap-4 items-center">
+                <div className="w-11 h-11 rounded-2xl bg-orange-500/15 border border-orange-500/25 flex items-center justify-center flex-shrink-0">
+                  <Flame className="w-5 h-5 text-orange-400" />
+                </div>
+                <div>
+                  <p className="font-bold text-base">La foule décide 🔥</p>
+                  <p className="text-gray-400 text-sm mt-0.5">Likez les sons demandés par les autres</p>
+                </div>
+              </div>
+            </button>
+
+            {/* Pourboire au chapeau */}
+            <button onClick={() => setShowTip(true)}
+              className="w-full glass rounded-2xl p-4 text-left hover:bg-white/8 border hover:border-amber-400/40 transition active:scale-[0.98]">
+              <div className="flex gap-4 items-center">
+                <div className="w-11 h-11 rounded-2xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center flex-shrink-0">
+                  <span className="text-xl">💛</span>
+                </div>
+                <div>
+                  <p className="font-bold text-base">Pourboire au chapeau</p>
+                  <p className="text-gray-400 text-sm mt-0.5">Soutenez l&apos;ambiance, sans demande de son</p>
+                </div>
+              </div>
+            </button>
           </div>
         </div>
+
+        {showWall && <VoteWall sessionId={id} clientId={clientIdRef.current} onClose={() => setShowWall(false)} />}
+        {showTip && (
+          <TipForm sessionId={id} authorName={customerName}
+            onClose={() => setShowTip(false)}
+            onSuccess={() => { setShowTip(false); setTipThanks(true); setTimeout(() => setTipThanks(false), 4000) }} />
+        )}
+        {tipThanks && (
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-gray-950 font-bold px-5 py-3 rounded-2xl shadow-2xl animate-slide-in">
+            💛 Merci pour le pourboire !
+          </div>
+        )}
 
         {(session.display_enabled || session.messages_enabled) && (
           <InteractionBar

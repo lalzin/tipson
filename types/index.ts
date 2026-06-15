@@ -1,6 +1,6 @@
 export type SessionStatus = 'active' | 'paused' | 'ended'
 export type SessionType = 'dj' | 'karaoke' | 'jukebox'
-export type RequestType = 'normal' | 'priority' | 'karaoke' | 'blacklist' | 'jukebox'
+export type RequestType = 'normal' | 'priority' | 'karaoke' | 'blacklist' | 'jukebox' | 'tip'
 export type RequestStatus = 'pending_payment' | 'paid' | 'approved' | 'rejected' | 'played'
 
 export interface Profile {
@@ -70,6 +70,7 @@ export interface Request {
   amount: number
   message: string | null
   queue_position: number | null
+  votes: number
   stripe_payment_intent_id: string | null
   paypal_order_id: string | null
   paypal_capture_id: string | null

@@ -15,6 +15,7 @@ import MusicLinks from '@/components/dj/MusicLinks'
 import BlacklistModal from '@/components/dj/BlacklistModal'
 import PromoCodesModal from '@/components/dj/PromoCodesModal'
 import JukeboxBridge from '@/components/dj/JukeboxBridge'
+import StatsModal from '@/components/dj/StatsModal'
 import { DISPLAY_THEMES, EMOJI_PALETTE, displayEmojis, BG_OPTIONS } from '@/lib/displayThemes'
 
 type FilterStatus = 'paid' | 'approved' | 'played' | 'rejected' | 'all'
@@ -26,6 +27,8 @@ export default function DJSessionPage() {
   const [requests, setRequests] = useState<Request[]>([])
   const [loading, setLoading] = useState(true)
   const [showHistory, setShowHistory] = useState(false)
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [showStats, setShowStats] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [notifEnabled, setNotifEnabled] = useState(false)
   const [showQR, setShowQR] = useState(false)
@@ -185,6 +188,24 @@ export default function DJSessionPage() {
     if (res.ok) setSession(await res.json())
   }
 
+  // Réordonne « à jouer » (glisser-déposer) : optimiste + persistance
+  function reorderPlay(draggedId: string, targetId: string, currentIds: string[]) {
+    if (draggedId === targetId) return
+    const ids = [...currentIds]
+    const from = ids.indexOf(draggedId)
+    const to = ids.indexOf(targetId)
+    if (from < 0 || to < 0) return
+    ids.splice(to, 0, ids.splice(from, 1)[0])
+    setRequests(prev => prev.map(r => {
+      const i = ids.indexOf(r.id)
+      return i >= 0 ? { ...r, queue_position: i + 1 } : r
+    }))
+    fetch(`/api/sessions/${id}/reorder`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    }).catch(() => {})
+  }
+
   async function prioritizeRequest(reqId: string) {
     const res = await fetch(`/api/requests/${reqId}/prioritize`, { method: 'POST' })
     if (res.ok) {
@@ -271,9 +292,14 @@ export default function DJSessionPage() {
 
   // Vue en colonnes : à valider / à jouer / historique (premium d'abord)
   const rankReq = (r: Request) => r.request_type === 'blacklist' ? 0 : r.request_type === 'priority' ? 1 : 2
-  const sortQueue = (a: Request, b: Request) => rankReq(a) - rankReq(b) || (new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-  const toValidate = requests.filter(r => r.status === 'paid').sort(sortQueue)
-  const toPlay = requests.filter(r => r.status === 'approved').sort(sortQueue)
+  // À valider : premium d'abord, puis les plus votées (la foule décide)
+  const sortVotes = (a: Request, b: Request) =>
+    rankReq(a) - rankReq(b) || (b.votes || 0) - (a.votes || 0) || (new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  // À jouer : ordre manuel (glisser-déposer → queue_position), sinon premium/ancienneté
+  const sortPlay = (a: Request, b: Request) =>
+    (a.queue_position ?? 1e9) - (b.queue_position ?? 1e9) || rankReq(a) - rankReq(b) || (new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+  const toValidate = requests.filter(r => r.status === 'paid' && r.request_type !== 'tip').sort(sortVotes)
+  const toPlay = requests.filter(r => r.status === 'approved' && r.request_type !== 'tip').sort(sortPlay)
   const history = requests.filter(r => ['played', 'rejected'].includes(r.status))
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
@@ -500,6 +526,13 @@ export default function DJSessionPage() {
           </button>
           )}
 
+          {/* Statistiques de la soirée */}
+          <button onClick={() => setShowStats(true)}
+            className="w-full glass rounded-2xl p-4 flex items-center justify-between hover:bg-white/8 transition text-left">
+            <span className="text-sm font-semibold flex items-center gap-2">📊 Statistiques</span>
+            <span className="text-gray-500 text-xs">Voir →</span>
+          </button>
+
           {/* Mode visualisation (beta) — DJ uniquement */}
           {session && session.session_type !== 'karaoke' && (
             <button onClick={() => setShowViz(true)}
@@ -550,21 +583,30 @@ export default function DJSessionPage() {
                   )}
                 </section>
 
-                {/* À jouer */}
+                {/* À jouer — réordonnable par glisser-déposer */}
                 <section className="space-y-3">
                   <h3 className="text-sm uppercase tracking-widest font-bold flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block" />
                     À jouer <span className="text-gray-500 font-normal">({toPlay.length})</span>
+                    {toPlay.length > 1 && <span className="text-[10px] text-gray-600 font-normal normal-case tracking-normal ml-1">· glissez pour réordonner</span>}
                   </h3>
                   {toPlay.length === 0 ? (
                     <div className="glass rounded-2xl py-10 text-center text-gray-600 text-sm">Rien à jouer pour l&apos;instant</div>
                   ) : (
                     <div className="space-y-3">
                       {toPlay.map(req => (
-                        <RequestCard key={req.id} request={req}
-                          onApprove={() => updateRequest(req.id, 'approved')}
-                          onReject={() => updateRequest(req.id, 'rejected')}
-                          onPlayed={() => updateRequest(req.id, 'played')} />
+                        <div key={req.id}
+                          draggable
+                          onDragStart={() => setDragId(req.id)}
+                          onDragEnd={() => setDragId(null)}
+                          onDragOver={e => e.preventDefault()}
+                          onDrop={() => { if (dragId) reorderPlay(dragId, req.id, toPlay.map(r => r.id)); setDragId(null) }}
+                          className={cn('cursor-grab active:cursor-grabbing transition', dragId === req.id && 'opacity-40')}>
+                          <RequestCard request={req}
+                            onApprove={() => updateRequest(req.id, 'approved')}
+                            onReject={() => updateRequest(req.id, 'rejected')}
+                            onPlayed={() => updateRequest(req.id, 'played')} />
+                        </div>
                       ))}
                     </div>
                   )}
@@ -606,6 +648,9 @@ export default function DJSessionPage() {
         />
       )}
 
+      {showStats && session && (
+        <StatsModal sessionId={session.id} requests={requests} onClose={() => setShowStats(false)} />
+      )}
       {showPromo && session && (
         <PromoCodesModal sessionId={session.id} onClose={() => setShowPromo(false)} />
       )}
@@ -953,6 +998,11 @@ function RequestCard({ request, onApprove, onReject, onPlayed }: {
             <div className="min-w-0 flex-1">
               <p className="font-bold truncate leading-tight">{request.song_name}</p>
               <p className="text-gray-400 text-sm truncate">{request.artist}</p>
+              {(request.votes ?? 0) > 0 && (
+                <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-bold text-orange-300 bg-orange-500/15 border border-orange-500/25 px-2 py-0.5 rounded-full">
+                  🔥 {request.votes} vote{request.votes > 1 ? 's' : ''}
+                </span>
+              )}
             </div>
             <div className="flex flex-col items-end gap-1 flex-shrink-0">
               <span className={cn(

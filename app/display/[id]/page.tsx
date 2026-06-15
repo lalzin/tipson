@@ -14,6 +14,7 @@ export default function DisplayPage() {
   const [loading, setLoading] = useState(true)
   const [messages, setMessages] = useState<Message[]>([])
   const [floats, setFloats] = useState<Floating[]>([])
+  const [votePops, setVotePops] = useState<{ id: number; left: number }[]>([])
   const [superMsg, setSuperMsg] = useState<Message | null>(null)
   const [validFlash, setValidFlash] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -55,6 +56,13 @@ export default function DisplayPage() {
     setTimeout(() => setFloats(f => f.filter(x => x.id !== fid)), 2500)
   }, [])
 
+  // « +1 » de vote (mur de votes) : animation dédiée
+  const spawnVote = useCallback(() => {
+    const fid = counter.current++
+    setVotePops(v => [...v, { id: fid, left: 8 + Math.random() * 84 }])
+    setTimeout(() => setVotePops(v => v.filter(x => x.id !== fid)), 1700)
+  }, [])
+
   // Chargement de la session (les messages restent éphémères : pas d'historique)
   useEffect(() => {
     fetch(`/api/sessions/public/${id}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(setSession).finally(() => setLoading(false))
@@ -72,6 +80,7 @@ export default function DisplayPage() {
     const channel = supabase
       .channel(`display-${id}`, { config: { broadcast: { self: false } } })
       .on('broadcast', { event: 'emoji' }, ({ payload }) => spawnEmoji(payload?.glyph || payload?.type))
+      .on('broadcast', { event: 'vote' }, () => spawnVote())
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `session_id=eq.${id}` },
         ({ new: m }: any) => {
           pushMessage(m as Message)
@@ -89,7 +98,7 @@ export default function DisplayPage() {
         ({ new: s }: any) => setSession(prev => prev ? { ...prev, ...s } : prev))
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [id, spawnEmoji, pushMessage])
+  }, [id, spawnEmoji, spawnVote, pushMessage])
 
   if (loading) return <div className="min-h-screen bg-gray-950" />
   if (!session) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-gray-500">Soirée introuvable</div>
@@ -248,6 +257,9 @@ export default function DisplayPage() {
 
       {/* Emojis flottants */}
       <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+        {votePops.map(v => (
+          <span key={v.id} className="vote-pop" style={{ left: `${v.left}%`, color: c1 }}>+1 🔥</span>
+        ))}
         {floats.map(f => (
           <span key={f.id} className="float-emoji-big text-6xl" style={{ left: `${f.left}%` }}>{f.emoji}</span>
         ))}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase-server'
-import { cancelPayment } from '@/lib/stripe'
+import { cancelPayment, refundPayment, isCaptured } from '@/lib/stripe'
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = await createServerSupabaseClient()
@@ -101,25 +101,31 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Clôture : annule les autorisations Stripe en attente (aucun débit, aucun frais)
+  // Clôture : aucune demande payée ne doit rester non jouée → on rend l'argent.
+  //  - autorisation non capturée (paid / pending_payment) → annulation (0 € de frais)
+  //  - paiement déjà encaissé (approved, validé mais pas joué) → vrai remboursement
   if (body.status === 'ended') {
     admin
       .from('requests')
-      .select('id, stripe_payment_intent_id')
+      .select('id, status, stripe_payment_intent_id, amount')
       .eq('session_id', params.id)
       .in('status', ['paid', 'approved', 'pending_payment'])
       .then(({ data: pendingRequests }) => {
         if (!pendingRequests?.length) return
         pendingRequests.forEach(async (r) => {
           try {
-            if (r.stripe_payment_intent_id) {
-              await cancelPayment(r.stripe_payment_intent_id)
+            if (r.stripe_payment_intent_id && r.amount > 0) {
+              if (r.status === 'approved' || await isCaptured(r.stripe_payment_intent_id)) {
+                await refundPayment(r.stripe_payment_intent_id) // déjà encaissé → remboursement
+              } else {
+                await cancelPayment(r.stripe_payment_intent_id)  // autorisation → libérée
+              }
               await admin.from('requests').update({ status: 'rejected', refunded: true }).eq('id', r.id)
             } else {
               await admin.from('requests').update({ status: 'rejected' }).eq('id', r.id)
             }
           } catch (err) {
-            console.error(`Cancel failed for request ${r.id}:`, err)
+            console.error(`Refund/cancel failed for request ${r.id}:`, err)
             await admin.from('requests').update({ status: 'rejected' }).eq('id', r.id)
           }
         })

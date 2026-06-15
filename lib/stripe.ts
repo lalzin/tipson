@@ -126,6 +126,29 @@ export async function cancelPayment(paymentIntentId: string) {
   return stripe.paymentIntents.cancel(paymentIntentId)
 }
 
+/**
+ * Rembourse un paiement DÉJÀ encaissé (capturé). Pour les destination charges,
+ * on reverse aussi le transfert et la commission afin que le client soit
+ * intégralement remboursé (la plateforme renonce à sa commission).
+ */
+export async function refundPayment(paymentIntentId: string) {
+  return stripe.refunds.create({
+    payment_intent: paymentIntentId,
+    reverse_transfer: true,
+    refund_application_fee: true,
+  })
+}
+
+/** Indique si un PaymentIntent est déjà encaissé (capturé). */
+export async function isCaptured(paymentIntentId: string): Promise<boolean> {
+  try {
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId)
+    return pi.status === 'succeeded'
+  } catch {
+    return false
+  }
+}
+
 /** Récupère un PaymentIntent (pour vérifier son statut côté serveur). */
 export async function getPaymentIntent(paymentIntentId: string) {
   return stripe.paymentIntents.retrieve(paymentIntentId)
