@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import type { Session, Message } from '@/types'
 import { displayColors } from '@/lib/displayThemes'
+import { Maximize2, Minimize2 } from 'lucide-react'
 
 type Floating = { id: number; emoji: string; left: number }
 
@@ -15,7 +16,19 @@ export default function DisplayPage() {
   const [floats, setFloats] = useState<Floating[]>([])
   const [superMsg, setSuperMsg] = useState<Message | null>(null)
   const [validFlash, setValidFlash] = useState<string | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const counter = useRef(0)
+
+  // Plein écran (comme une vidéo)
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', onChange)
+    return () => document.removeEventListener('fullscreenchange', onChange)
+  }, [])
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) document.exitFullscreen?.()
+    else document.documentElement.requestFullscreen?.().catch(() => {})
+  }, [])
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
 
@@ -155,9 +168,17 @@ export default function DisplayPage() {
       )}
       <div className="absolute inset-0 bg-black/25 pointer-events-none" />
 
-      {/* Badge beta */}
-      <div className="absolute top-4 right-4 z-30 text-xs px-2.5 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30 text-yellow-200">
-        Beta · en développement
+      {/* Badge beta + plein écran */}
+      <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+        <button onClick={toggleFullscreen}
+          title={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
+          className="group flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white/80 hover:text-white transition backdrop-blur">
+          {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          <span className="hidden sm:inline">{isFullscreen ? 'Quitter' : 'Plein écran'}</span>
+        </button>
+        <div className="text-xs px-2.5 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30 text-yellow-200">
+          Beta · en développement
+        </div>
       </div>
 
       {/* En-tête : logo + nom */}
@@ -190,10 +211,12 @@ export default function DisplayPage() {
             🎧 {session.profiles.dj_name}
           </p>
         )}
-        <h1 className="center-anim text-5xl lg:text-7xl font-black drop-shadow-2xl"
-          style={{ backgroundImage: `linear-gradient(90deg, ${c1}, ${c2}, ${c1})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
-          {session.name}
-        </h1>
+        {session.display_show_name !== false && (
+          <h1 className="center-anim text-5xl lg:text-7xl font-black drop-shadow-2xl"
+            style={{ backgroundImage: `linear-gradient(90deg, ${c1}, ${c2}, ${c1})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
+            {session.name}
+          </h1>
+        )}
         {session.display_show_venue !== false && session.venue && (
           <p className="text-2xl lg:text-3xl text-white/60 font-medium mt-3">📍 {session.venue}</p>
         )}

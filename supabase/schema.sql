@@ -207,3 +207,6 @@ alter table profiles add column if not exists spotify_refresh_token text;
 alter table profiles add column if not exists spotify_access_token text;
 alter table profiles add column if not exists spotify_expires_at timestamptz;
 alter table profiles add column if not exists spotify_user_id text;
+
+-- Mode visualisation : afficher ou non le nom de la soirée
+alter table sessions add column if not exists display_show_name boolean not null default true;

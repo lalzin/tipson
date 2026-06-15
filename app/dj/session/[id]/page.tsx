@@ -693,6 +693,7 @@ export default function DJSessionPage() {
             {(session as any).display_enabled && (
               <div className="space-y-3 pt-1 border-t border-white/5">
                 <p className="text-gray-500 text-xs">Informations affichées</p>
+                <ConfigToggle label="Nom de la soirée" checked={(session as any).display_show_name !== false} onChange={v => updateConfig({ display_show_name: v })} />
                 <ConfigToggle label="Nom du DJ" checked={(session as any).display_show_dj !== false} onChange={v => updateConfig({ display_show_dj: v })} />
                 <ConfigToggle label="Lieu de la soirée" checked={(session as any).display_show_venue !== false} onChange={v => updateConfig({ display_show_venue: v })} />
               </div>

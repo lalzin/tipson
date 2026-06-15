@@ -40,6 +40,7 @@ export interface Session {
   toxicity_threshold: number
   display_show_dj: boolean
   display_show_venue: boolean
+  display_show_name: boolean
   price_blacklist: number
   venue: string | null
   created_at: string
