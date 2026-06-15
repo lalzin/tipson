@@ -602,18 +602,18 @@ export default function DJSessionPage() {
               <div className="space-y-2 pt-1 border-t border-white/5">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-300">Sévérité de la modération</span>
-                  <span className="text-xs text-gray-500">seuil {(session as any).toxicity_threshold ?? 70}%</span>
+                  <span className="text-xs text-gray-500">seuil {(session as any).toxicity_threshold ?? 60}%</span>
                 </div>
                 <input
                   type="range" min="30" max="95" step="5"
-                  value={(session as any).toxicity_threshold ?? 70}
+                  value={(session as any).toxicity_threshold ?? 60}
                   onChange={e => updateConfig({ toxicity_threshold: Number(e.target.value) })}
                   className="w-full accent-purple-500"
                 />
                 <div className="flex justify-between text-[11px] text-gray-600">
                   <span>Strict</span><span>Permissif</span>
                 </div>
-                <p className="text-gray-600 text-[11px]">Plus le seuil est bas, plus les messages limites sont bloqués (analyse de toxicité Google Perspective).</p>
+                <p className="text-gray-600 text-[11px]">Plus le seuil est bas, plus les messages limites sont bloqués (filtre intégré + analyse de toxicité OpenAI).</p>
               </div>
             )}
 

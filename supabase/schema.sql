@@ -210,3 +210,6 @@ alter table profiles add column if not exists spotify_user_id text;
 
 -- Mode visualisation : afficher ou non le nom de la soirée
 alter table sessions add column if not exists display_show_name boolean not null default true;
+
+-- Modération plus stricte par défaut (seuil de toxicité Perspective abaissé)
+alter table sessions alter column toxicity_threshold set default 60;
