@@ -13,6 +13,7 @@ import QRModal from '@/components/dj/QRModal'
 import KaraokeQueue from '@/components/dj/KaraokeQueue'
 import MusicLinks from '@/components/dj/MusicLinks'
 import BlacklistModal from '@/components/dj/BlacklistModal'
+import PromoCodesModal from '@/components/dj/PromoCodesModal'
 
 type FilterStatus = 'paid' | 'approved' | 'played' | 'rejected' | 'all'
 
@@ -27,6 +28,7 @@ export default function DJSessionPage() {
   const [showQR, setShowQR] = useState(false)
   const [showViz, setShowViz] = useState(false)
   const [showBlacklist, setShowBlacklist] = useState(false)
+  const [showPromo, setShowPromo] = useState(false)
   const [showPrices, setShowPrices] = useState(false)
   const [editNormal, setEditNormal] = useState('')
   const [editPriority, setEditPriority] = useState('')
@@ -422,6 +424,13 @@ export default function DJSessionPage() {
             </button>
           )}
 
+          {/* Codes promo */}
+          <button onClick={() => setShowPromo(true)}
+            className="w-full glass rounded-2xl p-4 flex items-center justify-between hover:bg-white/8 transition text-left">
+            <span className="text-sm font-semibold flex items-center gap-2">🎟️ Codes promo</span>
+            <span className="text-gray-500 text-xs">Gérer →</span>
+          </button>
+
           {/* Mode visualisation (beta) — DJ uniquement */}
           {session && session.session_type !== 'karaoke' && (
             <button onClick={() => setShowViz(true)}
@@ -510,6 +519,10 @@ export default function DJSessionPage() {
           onPriceChange={cents => updateConfig({ price_blacklist: cents })}
           onClose={() => setShowBlacklist(false)}
         />
+      )}
+
+      {showPromo && session && (
+        <PromoCodesModal sessionId={session.id} onClose={() => setShowPromo(false)} />
       )}
 
       {/* Modale de configuration du mode visualisation */}

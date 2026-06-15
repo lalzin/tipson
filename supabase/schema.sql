@@ -172,3 +172,17 @@ create policy "blacklist_public_read" on blacklist_tracks for select using (true
 alter table requests drop constraint if exists requests_request_type_check;
 alter table requests add constraint requests_request_type_check
   check (request_type in ('normal', 'priority', 'karaoke', 'blacklist'));
+
+-- ── Codes promo à usage unique (mode express gratuit) ───────────────────────────
+create table if not exists promo_codes (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid references sessions(id) on delete cascade not null,
+  code text not null,
+  used boolean not null default false,
+  used_at timestamptz,
+  created_at timestamptz default now(),
+  unique (session_id, code)
+);
+create index if not exists promo_session_idx on promo_codes(session_id);
+alter table promo_codes enable row level security;
+-- Pas de policy de lecture publique : tout passe par le service client (sécurité).

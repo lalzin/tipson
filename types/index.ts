@@ -83,6 +83,14 @@ export interface MusicLinks {
   youtube?: string
 }
 
+export interface PromoCode {
+  id: string
+  code: string
+  used: boolean
+  used_at: string | null
+  created_at: string
+}
+
 export interface BlacklistTrack {
   id: string
   itunes_id: string

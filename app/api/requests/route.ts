@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
   let amount: number
   let finalRequestType: string
   let queuePosition: number | null = null
+  let consumedCodeId: string | null = null // pour rollback si l'insertion échoue
 
   if (isKaraoke) {
     const isPriority = body.is_priority === true
@@ -124,6 +125,29 @@ export async function POST(req: NextRequest) {
       const word = dup.status === 'played' ? 'a déjà été joué' : 'a déjà été demandé'
       return NextResponse.json({ error: `Ce morceau ${word} dans cette soirée.` }, { status: 409 })
     }
+
+    // Code promo (usage unique) : rend la demande gratuite. Ne s'applique pas aux
+    // morceaux en liste noire (tarif premium imposé).
+    if (body.promo_code) {
+      if (blacklisted) {
+        return NextResponse.json({ error: 'Les codes promo ne s\'appliquent pas aux morceaux interdits.' }, { status: 422 })
+      }
+      const codeNorm = String(body.promo_code).trim().toUpperCase()
+      // Consommation atomique : passe used false→true en une seule requête
+      const { data: consumed } = await admin
+        .from('promo_codes')
+        .update({ used: true, used_at: new Date().toISOString() })
+        .eq('session_id', session_id)
+        .eq('code', codeNorm)
+        .eq('used', false)
+        .select('id')
+        .maybeSingle()
+      if (!consumed) {
+        return NextResponse.json({ error: 'Code promo invalide ou déjà utilisé.' }, { status: 422 })
+      }
+      consumedCodeId = consumed.id
+      amount = 0
+    }
   }
 
   const { data, error } = await supabase
@@ -146,6 +170,13 @@ export async function POST(req: NextRequest) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    // Rollback du code promo consommé si l'insertion a échoué
+    if (consumedCodeId) {
+      const admin = createServiceSupabaseClient()
+      await admin.from('promo_codes').update({ used: false, used_at: null }).eq('id', consumedCodeId)
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
   return NextResponse.json(data, { status: 201 })
 }

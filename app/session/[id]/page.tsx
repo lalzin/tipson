@@ -41,6 +41,10 @@ export default function SessionPage() {
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [promoCode, setPromoCode] = useState('')
+  const [promoApplied, setPromoApplied] = useState(false)
+  const [promoChecking, setPromoChecking] = useState(false)
+  const [promoMsg, setPromoMsg] = useState('')
   const [confirming, setConfirming] = useState(false)
   const [request, setRequest] = useState<Request | null>(null)
   const [showCancel, setShowCancel] = useState(false)
@@ -212,6 +216,19 @@ export default function SessionPage() {
     return () => clearTimeout(t)
   }, [query, searchTracks])
 
+  async function applyPromo() {
+    const code = promoCode.trim().toUpperCase()
+    if (!code) return
+    setPromoChecking(true); setPromoMsg('')
+    try {
+      const res = await fetch(`/api/sessions/${id}/promo-codes/validate?code=${encodeURIComponent(code)}`)
+      const d = await res.json()
+      if (d.valid) { setPromoApplied(true); setPromoMsg('Code appliqué ✓ — gratuit') }
+      else { setPromoApplied(false); setPromoMsg(d.reason || 'Code invalide') }
+    } catch { setPromoMsg('Erreur, réessayez') }
+    finally { setPromoChecking(false) }
+  }
+
   async function handleSubmit() {
     if (!session || !selectedTrack || !customerName.trim()) return
     setSubmitting(true)
@@ -233,6 +250,7 @@ export default function SessionPage() {
           customer_user_id: user?.id ?? null,
           request_type: requestType,
           message: message.trim() || null,
+          promo_code: promoApplied ? promoCode.trim().toUpperCase() : undefined,
         }),
       })
       const data = await res.json()
@@ -668,6 +686,27 @@ export default function SessionPage() {
             </div>
           </div>
 
+          {/* Code promo — pas pour les morceaux interdits */}
+          {requestType !== 'blacklist' && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-300">Code promo <span className="text-gray-600 font-normal">(optionnel)</span></label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={promoCode}
+                  onChange={e => { setPromoCode(e.target.value.toUpperCase()); setPromoApplied(false); setPromoMsg('') }}
+                  placeholder="Ex : PR4K7X9"
+                  className="flex-1 px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 transition font-mono tracking-wider uppercase"
+                />
+                <button type="button" onClick={applyPromo} disabled={promoChecking || !promoCode.trim() || promoApplied}
+                  className="px-4 py-3 rounded-2xl glass text-sm font-medium hover:bg-white/10 disabled:opacity-40 transition flex-shrink-0">
+                  {promoChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : promoApplied ? '✓' : 'Appliquer'}
+                </button>
+              </div>
+              {promoMsg && <p className={cn('text-xs', promoApplied ? 'text-green-400' : 'text-red-400')}>{promoMsg}</p>}
+            </div>
+          )}
+
           {submitError && (
             <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 flex items-start gap-2">
               <span className="text-base">🎵</span>
@@ -681,7 +720,7 @@ export default function SessionPage() {
             className="w-full py-4 rounded-2xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-lg flex items-center justify-center gap-2 transition active:scale-95"
           >
             {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-            {amount === 0 ? 'Valider ma demande →' : 'Continuer vers le paiement →'}
+            {(promoApplied || amount === 0) ? 'Valider ma demande (gratuit) →' : 'Continuer vers le paiement →'}
           </button>
         </div>
       </main>
