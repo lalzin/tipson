@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { formatPrice } from '@/lib/utils'
 import {
   Shield, Loader2, Check, X, Music2, Crown, LogOut, Search, Users,
-  Radio, Mic2, Wallet, TrendingUp, Clock, RefreshCw, Activity, UserPlus, Filter,
+  Radio, Mic2, Wallet, TrendingUp, Clock, RefreshCw, Activity, UserPlus, Filter, Percent,
 } from 'lucide-react'
 
 interface AdminUser {
@@ -39,15 +39,38 @@ export default function AdminPage() {
   const [query, setQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all')
   const [refreshing, setRefreshing] = useState(false)
+  const [commission, setCommission] = useState('')
+  const [commissionSaving, setCommissionSaving] = useState(false)
+  const [commissionMsg, setCommissionMsg] = useState('')
 
   async function loadData() {
-    const [uRes, sRes] = await Promise.all([
+    const [uRes, sRes, cRes] = await Promise.all([
       fetch('/api/admin/users', { cache: 'no-store' }),
       fetch('/api/admin/stats', { cache: 'no-store' }),
+      fetch('/api/admin/settings', { cache: 'no-store' }),
     ])
     if (uRes.status === 403 || uRes.status === 401) { setDenied(true); return }
     if (uRes.ok) setUsers(await uRes.json())
     if (sRes.ok) setStats(await sRes.json())
+    if (cRes.ok) { const d = await cRes.json(); setCommission(String(d.commission_percent ?? '')) }
+  }
+
+  async function saveCommission() {
+    setCommissionSaving(true); setCommissionMsg('')
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ commission_percent: Number(commission) }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(d.error || 'Erreur')
+      setCommission(String(d.commission_percent))
+      setCommissionMsg('Enregistré ✓')
+      setTimeout(() => setCommissionMsg(''), 2500)
+    } catch (e) {
+      setCommissionMsg(e instanceof Error ? e.message : 'Erreur')
+    } finally { setCommissionSaving(false) }
   }
 
   useEffect(() => {
@@ -207,6 +230,39 @@ export default function AdminPage() {
             </div>
           </>
         )}
+
+        {/* ── Commission plateforme ───────────────────────────── */}
+        <div className="glass rounded-2xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
+              <Percent className="w-4 h-4 text-emerald-300" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm">Commission plateforme</h3>
+              <p className="text-gray-500 text-xs">Prélevée sur chaque paiement routé vers un organisateur (Stripe Connect).</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative w-32">
+              <input
+                type="number" min="0" max="50" step="0.5"
+                value={commission}
+                onChange={e => setCommission(e.target.value)}
+                className="w-full pl-3 pr-8 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500 transition"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-300 font-bold">%</span>
+            </div>
+            <button onClick={saveCommission} disabled={commissionSaving || commission === ''}
+              className="px-4 py-2.5 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-600/30 font-semibold text-sm transition disabled:opacity-40 flex items-center gap-2">
+              {commissionSaving && <Loader2 className="w-4 h-4 animate-spin" />} Enregistrer
+            </button>
+            {commissionMsg && <span className="text-xs text-gray-400">{commissionMsg}</span>}
+          </div>
+          <p className="text-gray-600 text-[11px]">
+            Conseil : les frais Stripe fixes (~0,25 € par paiement) pèsent lourd sur les petits montants.
+            Une commission de 15 % et un prix minimum de demande protègent ta marge.
+          </p>
+        </div>
 
         {/* ── Gestion des comptes ─────────────────────────────── */}
         <div className="space-y-3 pt-2">

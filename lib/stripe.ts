@@ -5,12 +5,13 @@ import Stripe from 'stripe'
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 // Commission de la plateforme prélevée sur chaque pourboire (en %).
-// Configurable sans redéploiement via la variable d'environnement.
+// Valeur par défaut/repli ; la valeur réelle est gérée en base (admin) via
+// lib/platform-settings.ts et passée à platformFee/createAuthorization.
 export const PLATFORM_FEE_PERCENT = Number(process.env.PLATFORM_FEE_PERCENT ?? 10)
 
 /** Montant de la commission plateforme (en centimes) pour un pourboire donné. */
-export function platformFee(amountCents: number): number {
-  return Math.round(amountCents * (PLATFORM_FEE_PERCENT / 100))
+export function platformFee(amountCents: number, percent: number = PLATFORM_FEE_PERCENT): number {
+  return Math.round(amountCents * (percent / 100))
 }
 
 /**
@@ -28,6 +29,7 @@ export async function createAuthorization(
   description: string,
   metadata: Record<string, string>,
   destinationAccount?: string,
+  feePercent?: number,
 ) {
   const base: Stripe.PaymentIntentCreateParams = {
     amount: amountCents,
@@ -40,7 +42,7 @@ export async function createAuthorization(
 
   if (destinationAccount) {
     base.transfer_data = { destination: destinationAccount }
-    base.application_fee_amount = platformFee(amountCents)
+    base.application_fee_amount = platformFee(amountCents, feePercent)
   }
 
   return stripe.paymentIntents.create(base)

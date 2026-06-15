@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
 import { createAuthorization } from '@/lib/stripe'
+import { getPlatformCommission } from '@/lib/platform-settings'
 import { rateLimit, isValidUuid } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
@@ -42,11 +43,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const feePercent = await getPlatformCommission()
   const intent = await createAuthorization(
     request.amount,
-    `TIPSON — ${request.song_name} par ${request.artist}`,
+    `TIPSON · ${request.song_name} par ${request.artist}`,
     { request_id: request.id, session_id: request.session_id },
     destinationAccount,
+    feePercent,
   )
 
   await supabase

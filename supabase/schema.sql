@@ -213,3 +213,15 @@ alter table sessions add column if not exists display_show_name boolean not null
 
 -- Modération plus stricte par défaut (seuil de toxicité Perspective abaissé)
 alter table sessions alter column toxicity_threshold set default 60;
+
+-- ── Réglages plateforme (singleton) : commission gérée depuis l'admin ────────
+create table if not exists platform_settings (
+  id integer primary key default 1,
+  commission_percent numeric not null default 10,
+  updated_at timestamptz not null default now(),
+  constraint platform_settings_singleton check (id = 1)
+);
+insert into platform_settings (id, commission_percent)
+  values (1, 10) on conflict (id) do nothing;
+-- Accès service-role uniquement (lecture/écriture via API admin) : RLS activé sans policy.
+alter table platform_settings enable row level security;

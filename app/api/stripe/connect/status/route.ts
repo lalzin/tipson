@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getAuthContext } from '@/lib/auth'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
-import { retrieveAccountStatus, getAccountBalance, PLATFORM_FEE_PERCENT } from '@/lib/stripe'
+import { retrieveAccountStatus, getAccountBalance } from '@/lib/stripe'
+import { getPlatformCommission } from '@/lib/platform-settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,11 +11,12 @@ export async function GET() {
   const auth = await getAuthContext()
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const feePercent = await getPlatformCommission()
   const accountId = auth.profile.stripe_account_id
   if (!accountId) {
     return NextResponse.json({
       onboarded: false, charges_enabled: false, payouts_enabled: false,
-      available: 0, pending: 0, feePercent: PLATFORM_FEE_PERCENT,
+      available: 0, pending: 0, feePercent,
     })
   }
 
@@ -41,14 +43,14 @@ export async function GET() {
     return NextResponse.json({
       onboarded: onboardingComplete,
       charges_enabled, payouts_enabled, available, pending,
-      feePercent: PLATFORM_FEE_PERCENT,
+      feePercent,
     })
   } catch (err: any) {
     console.error('Stripe Connect status error:', err?.message || err)
     // Renvoie un état neutre (permet de relancer l'onboarding) plutôt qu'un 500
     return NextResponse.json({
       onboarded: false, charges_enabled: false, payouts_enabled: false,
-      available: 0, pending: 0, feePercent: PLATFORM_FEE_PERCENT,
+      available: 0, pending: 0, feePercent,
     })
   }
 }
