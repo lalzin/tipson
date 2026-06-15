@@ -41,6 +41,7 @@ export interface Session {
   display_show_dj: boolean
   display_show_venue: boolean
   display_show_name: boolean
+  votes_enabled: boolean
   price_blacklist: number
   venue: string | null
   created_at: string

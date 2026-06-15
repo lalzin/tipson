@@ -806,7 +806,7 @@ export default function SessionPage() {
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex gap-4 items-center">
                     <div className="w-12 h-12 rounded-2xl bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
-                      <Flame className="w-6 h-6 text-red-400" />
+                      <span className="text-2xl">😈</span>
                     </div>
                     <div>
                       <p className="font-bold text-base">Demande liste noire</p>
@@ -818,7 +818,8 @@ export default function SessionPage() {
               </button>
             )}
 
-            {/* La foule décide (mur de votes) */}
+            {/* La foule décide (mur de votes) — activable par le DJ */}
+            {session.votes_enabled !== false && (
             <button onClick={() => setShowWall(true)}
               className="w-full glass rounded-2xl p-4 text-left hover:bg-white/8 border hover:border-orange-500/40 transition active:scale-[0.98]">
               <div className="flex gap-4 items-center">
@@ -831,6 +832,7 @@ export default function SessionPage() {
                 </div>
               </div>
             </button>
+            )}
 
             {/* Pourboire au chapeau */}
             <button onClick={() => setShowTip(true)}
@@ -883,7 +885,7 @@ export default function SessionPage() {
         </button>
         <div className="flex flex-col space-y-4 max-w-md mx-auto w-full">
           <div>
-            <h2 className="text-2xl font-bold">Morceaux interdits 🔥</h2>
+            <h2 className="text-2xl font-bold">Morceaux interdits 😈</h2>
             <p className="text-gray-400 text-sm mt-1">Choisissez un morceau · {formatPrice(session.price_blacklist ?? 1000)} pour le faire passer.</p>
           </div>
           <div className="space-y-2">

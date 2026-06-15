@@ -62,7 +62,7 @@ export default function BlacklistModal({ sessionId, price, onPriceChange, onClos
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="w-full max-w-md bg-gray-900 border border-white/10 rounded-3xl p-6 space-y-4 max-h-[92vh] overflow-y-auto my-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold flex items-center gap-2">🔥 Liste noire</h2>
+          <h2 className="text-xl font-bold flex items-center gap-2">😈 Liste noire</h2>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition"><X className="w-5 h-5" /></button>
         </div>
         <p className="text-gray-500 text-xs">Les morceaux ici ne peuvent être demandés qu&apos;au tarif premium.</p>

@@ -29,6 +29,7 @@ export default function DJSessionPage() {
   const [showHistory, setShowHistory] = useState(false)
   const [dragId, setDragId] = useState<string | null>(null)
   const [showStats, setShowStats] = useState(false)
+  const [showConfig, setShowConfig] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [notifEnabled, setNotifEnabled] = useState(false)
   const [showQR, setShowQR] = useState(false)
@@ -85,7 +86,7 @@ export default function DJSessionPage() {
     if (!notifRef.current || typeof Notification === 'undefined' || Notification.permission !== 'granted') return
     if (!document.hidden) return // déjà visible à l'écran
     try {
-      const tag = req.request_type === 'priority' ? '⚡ Demande express' : req.request_type === 'blacklist' ? '🔥 Demande interdite' : '🎵 Nouvelle demande'
+      const tag = req.request_type === 'priority' ? '⚡ Demande express' : req.request_type === 'blacklist' ? '😈 Demande interdite' : '🎵 Nouvelle demande'
       new Notification(tag, {
         body: `${req.song_name}${req.artist ? ' · ' + req.artist : ''}`,
         icon: '/icon-192.png',
@@ -508,23 +509,12 @@ export default function DJSessionPage() {
             </button>
           </div>
 
-          {/* Liste noire — DJ uniquement */}
-          {session && session.session_type !== 'karaoke' && (
-            <button onClick={() => setShowBlacklist(true)}
-              className="w-full glass rounded-2xl p-4 flex items-center justify-between hover:bg-white/8 transition text-left">
-              <span className="text-sm font-semibold flex items-center gap-2">🔥 Liste noire</span>
-              <span className="text-gray-500 text-xs">Configurer →</span>
-            </button>
-          )}
-
-          {/* Codes promo — pas pour le jukebox (gratuit) */}
-          {session?.session_type !== 'jukebox' && (
-          <button onClick={() => setShowPromo(true)}
+          {/* Configurateur global de la soirée (regroupe tous les réglages) */}
+          <button onClick={() => setShowConfig(true)}
             className="w-full glass rounded-2xl p-4 flex items-center justify-between hover:bg-white/8 transition text-left">
-            <span className="text-sm font-semibold flex items-center gap-2">🎟️ Codes promo</span>
-            <span className="text-gray-500 text-xs">Gérer →</span>
+            <span className="text-sm font-semibold flex items-center gap-2">⚙️ Configurer la soirée</span>
+            <span className="text-gray-500 text-xs">Ouvrir →</span>
           </button>
-          )}
 
           {/* Statistiques de la soirée */}
           <button onClick={() => setShowStats(true)}
@@ -532,18 +522,6 @@ export default function DJSessionPage() {
             <span className="text-sm font-semibold flex items-center gap-2">📊 Statistiques</span>
             <span className="text-gray-500 text-xs">Voir →</span>
           </button>
-
-          {/* Mode visualisation (beta) — DJ uniquement */}
-          {session && session.session_type !== 'karaoke' && (
-            <button onClick={() => setShowViz(true)}
-              className="w-full glass rounded-2xl p-4 flex items-center justify-between hover:bg-white/8 transition text-left">
-              <span className="text-sm font-semibold flex items-center gap-2">📺 Mode visualisation</span>
-              <span className="flex items-center gap-2">
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">beta</span>
-                <span className="text-gray-500 text-xs">Configurer →</span>
-              </span>
-            </button>
-          )}
         </aside>
 
         {/* ── COLONNE DROITE : DEMANDES ── */}
@@ -650,6 +628,52 @@ export default function DJSessionPage() {
 
       {showStats && session && (
         <StatsModal sessionId={session.id} requests={requests} onClose={() => setShowStats(false)} />
+      )}
+
+      {/* Configurateur global de la soirée */}
+      {showConfig && session && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm px-4 pb-4 sm:pb-0 overflow-y-auto"
+          onClick={e => { if (e.target === e.currentTarget) setShowConfig(false) }}>
+          <div className="w-full max-w-md bg-gray-900 border border-white/10 rounded-3xl p-6 space-y-4 max-h-[92vh] overflow-y-auto my-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold">Configurer la soirée</h2>
+                <p className="text-gray-500 text-xs mt-0.5">Tous les réglages au même endroit</p>
+              </div>
+              <button onClick={() => setShowConfig(false)} className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Réglages rapides */}
+            <div className="space-y-2.5">
+              <ConfigToggle label="🔥 Mur de votes (la foule décide)"
+                checked={(session as any).votes_enabled !== false}
+                onChange={v => updateConfig({ votes_enabled: v })} />
+              {session.session_type !== 'jukebox' && (
+                <ConfigToggle label="⚡ Option express (passer devant)"
+                  checked={(session as any).express_enabled !== false}
+                  onChange={v => updateConfig({ express_enabled: v })} />
+              )}
+            </div>
+
+            {/* Accès aux réglages détaillés */}
+            <div className="space-y-2 pt-1 border-t border-white/5">
+              {session.session_type !== 'jukebox' && (
+                <ConfigEntry label="💶 Tarifs" hint="Modifier les prix" onClick={() => { setShowConfig(false); openPrices() }} />
+              )}
+              {session.session_type !== 'karaoke' && (
+                <ConfigEntry label="😈 Liste noire" hint="Morceaux interdits (premium)" onClick={() => { setShowConfig(false); setShowBlacklist(true) }} />
+              )}
+              {session.session_type !== 'jukebox' && (
+                <ConfigEntry label="🎟️ Codes promo" hint="Codes à usage unique" onClick={() => { setShowConfig(false); setShowPromo(true) }} />
+              )}
+              {session.session_type !== 'karaoke' && (
+                <ConfigEntry label="📺 Mode visualisation" hint="Écran, thèmes, emojis…" beta onClick={() => { setShowConfig(false); setShowViz(true) }} />
+              )}
+            </div>
+          </div>
+        </div>
       )}
       {showPromo && session && (
         <PromoCodesModal sessionId={session.id} onClose={() => setShowPromo(false)} />
@@ -957,6 +981,22 @@ function ConfigToggle({ label, checked, onChange }: { label: string; checked: bo
   )
 }
 
+function ConfigEntry({ label, hint, onClick, beta }: { label: string; hint: string; onClick: () => void; beta?: boolean }) {
+  return (
+    <button onClick={onClick}
+      className="w-full glass rounded-2xl p-3.5 flex items-center justify-between hover:bg-white/8 transition text-left">
+      <span className="min-w-0">
+        <span className="text-sm font-semibold block">{label}</span>
+        <span className="text-gray-500 text-xs">{hint}</span>
+      </span>
+      <span className="flex items-center gap-2 flex-shrink-0">
+        {beta && <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">beta</span>}
+        <ChevronRight className="w-4 h-4 text-gray-500" />
+      </span>
+    </button>
+  )
+}
+
 function RequestCard({ request, onApprove, onReject, onPlayed }: {
   request: Request
   onApprove: () => void
@@ -1009,7 +1049,7 @@ function RequestCard({ request, onApprove, onReject, onPlayed }: {
                 'text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1',
                 isBlacklist ? 'bg-red-500/25 text-red-200' : isPriority ? 'bg-purple-500/25 text-purple-200' : 'bg-blue-500/20 text-blue-300'
               )}>
-                {isBlacklist ? <>🔥 INTERDIT</> : isPriority ? <><Zap className="w-3 h-3" /> MAINTENANT</> : <><Clock className="w-3 h-3" /> PLAYLIST</>}
+                {isBlacklist ? <>😈 INTERDIT</> : isPriority ? <><Zap className="w-3 h-3" /> MAINTENANT</> : <><Clock className="w-3 h-3" /> PLAYLIST</>}
               </span>
               <span className="text-green-300 font-black text-sm">{formatPrice(request.amount)}</span>
             </div>

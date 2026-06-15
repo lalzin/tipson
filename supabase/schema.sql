@@ -250,3 +250,6 @@ create table if not exists request_votes (
   primary key (request_id, client_id)
 );
 alter table request_votes enable row level security;
+
+-- Mur de votes activable par soirée
+alter table sessions add column if not exists votes_enabled boolean not null default true;

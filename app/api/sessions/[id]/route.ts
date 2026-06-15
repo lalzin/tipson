@@ -88,6 +88,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (body.display_show_dj !== undefined) updates.display_show_dj = !!body.display_show_dj
   if (body.display_show_venue !== undefined) updates.display_show_venue = !!body.display_show_venue
   if (body.display_show_name !== undefined) updates.display_show_name = !!body.display_show_name
+  if (body.votes_enabled !== undefined) updates.votes_enabled = !!body.votes_enabled
   if (body.price_blacklist !== undefined) updates.price_blacklist = body.price_blacklist
   if (body.name !== undefined) updates.name = body.name
 
