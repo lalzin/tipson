@@ -35,7 +35,9 @@ export async function POST(req: NextRequest) {
     const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
     const account = await createConnectAccount(user?.email ?? undefined, auth!.profile.dj_name)
-    await admin.from('profiles').update({ stripe_account_id: account.id }).eq('id', auth!.userId)
+    await admin.from('profiles')
+      .update({ stripe_account_id: account.id, charges_enabled: false, payouts_enabled: false })
+      .eq('id', auth!.userId)
     return account.id
   }
 
@@ -46,13 +48,18 @@ export async function POST(req: NextRequest) {
       const link = await createOnboardingLink(accountId, refreshUrl, returnUrl)
       return NextResponse.json({ url: link.url })
     } catch (err: any) {
-      // Compte existant incompatible (créé avec une autre configuration que
-      // 'recipient', ex. ancienne version du code) → on recrée et on réessaie.
+      // Le compte stocké est inutilisable par cette clé : créé avec d'anciennes
+      // clés (permission denied), supprimé (No such account), ou avec une
+      // configuration incompatible (configs_must_match). → on recrée et on réessaie.
       const code = err?.code || err?.raw?.code || ''
       const msg = err?.raw?.message || err?.message || ''
-      const mismatch = code === 'configs_must_match_to_use_account_links'
-        || /configs_must_match|configuration|No such account/i.test(msg)
-      if (!mismatch) throw err
+      const staleAccount =
+        code === 'configs_must_match_to_use_account_links'
+        || code === 'forbidden'
+        || code === 'resource_missing'
+        || code === 'account_invalid'
+        || /configs_must_match|configuration|no such account|does not have permission to access the object acct|permission denied/i.test(msg)
+      if (!staleAccount) throw err
 
       accountId = await freshAccount()
       const link = await createOnboardingLink(accountId, refreshUrl, returnUrl)
