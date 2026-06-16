@@ -47,7 +47,7 @@ export default function ActiveRequests({
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 z-40 w-72 sm:w-80 glass-strong rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
+          <div className="absolute right-0 top-full mt-2 z-40 w-72 sm:w-80 bg-gray-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
             <div className="px-3.5 py-2.5 border-b border-white/10 flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-gray-300">Vos demandes</span>
               <button onClick={() => setOpen(false)} className="text-gray-500 hover:text-gray-300 transition"><X className="w-4 h-4" /></button>
