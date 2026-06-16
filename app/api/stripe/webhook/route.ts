@@ -3,6 +3,7 @@ import type Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
 import { recordTipFromIntent, recordSuperMessageFromIntent } from '@/lib/payment-records'
+import { sendEmail, receiptHtml } from '@/lib/email'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
         const pi = event.data.object as Stripe.PaymentIntent
         if (pi.metadata?.kind === 'tip') await recordTipFromIntent(pi)
         else if (pi.metadata?.kind === 'super_message') await recordSuperMessageFromIntent(pi)
+        await sendReceipt(pi)
         break
       }
       case 'charge.refunded': {
@@ -52,4 +54,51 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ received: true })
+}
+
+// Envoie un reçu au client après un paiement encaissé.
+async function sendReceipt(pi: Stripe.PaymentIntent) {
+  try {
+    const admin = createServiceSupabaseClient()
+
+    // Email du client : saisi dans Stripe (billing_details) ou sur la demande
+    let email = pi.receipt_email || null
+    if (!email && pi.latest_charge) {
+      const charge = await stripe.charges.retrieve(String(pi.latest_charge))
+      email = charge.billing_details?.email || charge.receipt_email || null
+    }
+
+    // Objet + session selon le type de paiement
+    let label = 'Demande musicale'
+    let sessionId = pi.metadata?.session_id || null
+    if (pi.metadata?.kind === 'tip') label = '💛 Pourboire au chapeau'
+    else if (pi.metadata?.kind === 'super_message') label = '✨ Super-message'
+    else if (pi.metadata?.request_id) {
+      const { data: r } = await admin
+        .from('requests')
+        .select('song_name, artist, customer_email, session_id')
+        .eq('id', pi.metadata.request_id).maybeSingle()
+      if (r) {
+        label = `🎵 ${r.song_name}${r.artist ? ' · ' + r.artist : ''}`
+        sessionId = r.session_id || sessionId
+        if (!email) email = r.customer_email || null
+      }
+    }
+    if (!email) return // pas d'email → pas de reçu (silencieux)
+
+    let sessionName: string | undefined, djName: string | undefined
+    if (sessionId) {
+      const { data: s } = await admin
+        .from('sessions').select('name, profiles!inner(dj_name)').eq('id', sessionId).maybeSingle()
+      if (s) { sessionName = (s as any).name; djName = (s as any).profiles?.dj_name }
+    }
+
+    await sendEmail({
+      to: email,
+      subject: 'Votre reçu TIPSON',
+      html: receiptHtml({ amountCents: pi.amount, label, djName, sessionName }),
+    })
+  } catch (e) {
+    console.error('sendReceipt error:', e)
+  }
 }

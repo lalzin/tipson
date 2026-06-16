@@ -1,6 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase-server'
 import { cancelPayment, refundPayment, isCaptured } from '@/lib/stripe'
+import { sendEmail, recapHtml } from '@/lib/email'
+
+// Récap de soirée envoyé au DJ à la clôture (best-effort).
+async function sendSessionRecap(admin: ReturnType<typeof createServiceSupabaseClient>, sessionId: string, djId: string, sessionName: string) {
+  const { data: { user } } = await admin.auth.admin.getUserById(djId)
+  const email = user?.email
+  if (!email) return
+
+  const { data: reqs } = await admin
+    .from('requests')
+    .select('song_name, artist, amount, status, request_type')
+    .eq('session_id', sessionId)
+  const all = reqs ?? []
+  const revenueCents = all.filter(r => ['approved', 'played'].includes(r.status)).reduce((s, r) => s + (r.amount || 0), 0)
+  const played = all.filter(r => r.status === 'played').length
+  const requests = all.filter(r => r.request_type !== 'tip').length
+
+  const byTrack = new Map<string, { song: string; artist: string; count: number }>()
+  for (const r of all) {
+    if (r.request_type === 'tip') continue
+    const key = `${r.song_name}__${r.artist}`
+    const cur = byTrack.get(key) || { song: r.song_name, artist: r.artist, count: 0 }
+    cur.count++; byTrack.set(key, cur)
+  }
+  const topTracks = Array.from(byTrack.values()).sort((a, b) => b.count - a.count).slice(0, 5)
+
+  await sendEmail({
+    to: email,
+    subject: `Bilan de votre soirée · ${sessionName}`,
+    html: recapHtml({ sessionName, revenueCents, played, requests, topTracks }),
+  })
+}
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = await createServerSupabaseClient()
@@ -132,6 +164,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           }
         })
       })
+
+    // Récap de soirée par email au DJ (best-effort, n'impacte pas la réponse)
+    sendSessionRecap(admin, params.id, (data as any).dj_id, (data as any).name).catch(() => {})
   }
 
   return NextResponse.json(data)
