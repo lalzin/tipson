@@ -35,8 +35,8 @@ export default function PrivacyPage() {
 
         <Section title="1. Responsable du traitement">
           <p>
-            Le responsable du traitement est <Fill>[Nom de l&apos;éditeur / société]</Fill>,
-            joignable à l&apos;adresse <Fill>[email de contact]</Fill>. Les informations complètes
+            Le responsable du traitement est <strong>MARZIN CONSULTING</strong> (SAS, SIREN 100 068 568),
+            joignable à l&apos;adresse <a href="mailto:contact@tipson.online" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">contact@tipson.online</a>. Les informations complètes
             figurent dans les <Link href="/mentions-legales" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">mentions légales</Link>.
           </p>
         </Section>
@@ -100,7 +100,7 @@ export default function PrivacyPage() {
             <li>Droit de retirer votre consentement à tout moment.</li>
           </ul>
           <p className="mt-2">
-            Pour exercer ces droits, contactez-nous à <Fill>[email de contact]</Fill>. Vous pouvez
+            Pour exercer ces droits, contactez-nous à <a href="mailto:contact@tipson.online" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">contact@tipson.online</a>. Vous pouvez
             également introduire une réclamation auprès de la CNIL (
             <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">www.cnil.fr</a>).
           </p>

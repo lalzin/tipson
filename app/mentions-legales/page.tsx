@@ -30,18 +30,19 @@ export default function LegalPage() {
         <Section title="1. Éditeur du site">
           <p>Le site et l&apos;application TIPSON sont édités par :</p>
           <ul className="list-none space-y-1.5 mt-2">
-            <li>Dénomination : <Fill>[Nom de la société ou de l&apos;auto-entrepreneur]</Fill></li>
-            <li>Forme juridique : <Fill>[SAS / SARL / micro-entreprise…]</Fill></li>
-            <li>Capital social : <Fill>[le cas échéant]</Fill></li>
-            <li>Siège social : <Fill>[adresse complète]</Fill></li>
-            <li>SIRET : <Fill>[numéro SIRET]</Fill></li>
-            <li>N° TVA intracommunautaire : <Fill>[le cas échéant]</Fill></li>
-            <li>Email : <Fill>[email de contact]</Fill></li>
+            <li>Dénomination : <strong>MARZIN CONSULTING</strong></li>
+            <li>Forme juridique : SAS (société par actions simplifiée)</li>
+            <li>Siège social : Bureau 3, 5 allée de la Grande Treille, 35000 Rennes</li>
+            <li>SIREN : 100 068 568</li>
+            <li>SIRET (siège) : 100 068 568 00011</li>
+            <li>N° TVA intracommunautaire : FR28 100 068 568</li>
+            <li>Code APE : 62.02A — Conseil en systèmes et logiciels informatiques</li>
+            <li>Email : <a href="mailto:contact@tipson.online" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">contact@tipson.online</a></li>
           </ul>
         </Section>
 
         <Section title="2. Directeur de la publication">
-          <p>Le directeur de la publication est <Fill>[Prénom Nom]</Fill>.</p>
+          <p>Le directeur de la publication est <strong>Alan Marzin</strong>, président de MARZIN CONSULTING.</p>
         </Section>
 
         <Section title="3. Hébergement">
@@ -89,7 +90,7 @@ export default function LegalPage() {
         </Section>
 
         <Section title="8. Contact">
-          <p>Pour toute question relative au site, vous pouvez nous écrire à <Fill>[email de contact]</Fill>.</p>
+          <p>Pour toute question relative au site, vous pouvez nous écrire à <a href="mailto:contact@tipson.online" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">contact@tipson.online</a>.</p>
         </Section>
 
         <div className="pt-4 border-t border-white/5 text-sm text-gray-500">
