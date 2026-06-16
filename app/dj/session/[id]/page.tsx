@@ -645,9 +645,10 @@ export default function DJSessionPage() {
         <StatsModal sessionId={session.id} requests={requests} onClose={() => setShowStats(false)} />
       )}
 
-      {/* Configurateur global de la soirée */}
+      {/* Configurateur global de la soirée — reste ouvert en arrière-plan (z-40) :
+          fermer un sous-réglage (z-50) revient ici automatiquement. */}
       {showConfig && session && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm px-4 pb-4 sm:pb-0 overflow-y-auto"
+        <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm px-4 pb-4 sm:pb-0 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setShowConfig(false) }}>
           <div className="w-full max-w-md bg-gray-900 border border-white/10 rounded-3xl p-6 space-y-4 max-h-[92vh] overflow-y-auto my-6">
             <div className="flex items-center justify-between">
@@ -655,37 +656,43 @@ export default function DJSessionPage() {
                 <h2 className="text-xl font-bold">Configurer la soirée</h2>
                 <p className="text-gray-500 text-xs mt-0.5">Tous les réglages au même endroit</p>
               </div>
-              <button onClick={() => setShowConfig(false)} className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition">
-                <X className="w-5 h-5" />
+              <button onClick={() => setShowConfig(false)} className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition text-sm font-medium flex items-center gap-1.5">
+                <Check className="w-4 h-4" /> Terminé
               </button>
             </div>
 
             {/* Réglages rapides */}
-            <div className="space-y-2.5">
-              <ConfigToggle label="🔥 Mur de votes (la foule décide)"
-                checked={(session as any).votes_enabled !== false}
-                onChange={v => updateConfig({ votes_enabled: v })} />
-              {session.session_type !== 'jukebox' && (
-                <ConfigToggle label="⚡ Option express (passer devant)"
-                  checked={(session as any).express_enabled !== false}
-                  onChange={v => updateConfig({ express_enabled: v })} />
-              )}
+            <div>
+              <p className="text-gray-500 text-xs uppercase tracking-wider font-semibold mb-2">Réglages rapides</p>
+              <div className="space-y-2.5 glass rounded-2xl p-3.5">
+                <ConfigToggle label="🔥 Mur de votes (la foule décide)"
+                  checked={(session as any).votes_enabled !== false}
+                  onChange={v => updateConfig({ votes_enabled: v })} />
+                {session.session_type !== 'jukebox' && (
+                  <ConfigToggle label="⚡ Option express (passer devant)"
+                    checked={(session as any).express_enabled !== false}
+                    onChange={v => updateConfig({ express_enabled: v })} />
+                )}
+              </div>
             </div>
 
-            {/* Accès aux réglages détaillés */}
-            <div className="space-y-2 pt-1 border-t border-white/5">
-              {session.session_type !== 'jukebox' && (
-                <ConfigEntry label="💶 Tarifs" hint="Modifier les prix" onClick={() => { setShowConfig(false); openPrices() }} />
-              )}
-              {session.session_type !== 'karaoke' && (
-                <ConfigEntry label="😈 Liste noire" hint="Morceaux interdits (premium)" onClick={() => { setShowConfig(false); setShowBlacklist(true) }} />
-              )}
-              {session.session_type !== 'jukebox' && (
-                <ConfigEntry label="🎟️ Codes promo" hint="Codes à usage unique" onClick={() => { setShowConfig(false); setShowPromo(true) }} />
-              )}
-              {session.session_type !== 'karaoke' && (
-                <ConfigEntry label="📺 Mode visualisation" hint="Écran, thèmes, emojis…" beta onClick={() => { setShowConfig(false); setShowViz(true) }} />
-              )}
+            {/* Accès aux réglages détaillés (s'ouvrent par-dessus, retour ici en fermant) */}
+            <div>
+              <p className="text-gray-500 text-xs uppercase tracking-wider font-semibold mb-2">Réglages détaillés</p>
+              <div className="space-y-2">
+                {session.session_type !== 'jukebox' && (
+                  <ConfigEntry label="💶 Tarifs" hint="Modifier les prix" onClick={openPrices} />
+                )}
+                {session.session_type !== 'karaoke' && (
+                  <ConfigEntry label="😈 Liste noire" hint="Morceaux interdits (premium)" onClick={() => setShowBlacklist(true)} />
+                )}
+                {session.session_type !== 'jukebox' && (
+                  <ConfigEntry label="🎟️ Codes promo" hint="Codes à usage unique" onClick={() => setShowPromo(true)} />
+                )}
+                {session.session_type !== 'karaoke' && (
+                  <ConfigEntry label="📺 Mode visualisation" hint="Écran, thèmes, emojis…" beta onClick={() => setShowViz(true)} />
+                )}
+              </div>
             </div>
           </div>
         </div>
