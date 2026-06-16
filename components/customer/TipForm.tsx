@@ -4,6 +4,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import { Loader2, Heart, ArrowLeft } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
+import { getClientId } from '@/lib/client-id'
 import StripeCheckout from '@/components/customer/StripeCheckout'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -48,7 +49,7 @@ export default function TipForm({ sessionId, authorName, onSuccess, onClose }: {
     try {
       const res = await fetch('/api/stripe/tip/intent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, amount: cents, author_name: authorName || null, client_id: typeof localStorage !== 'undefined' ? localStorage.getItem('tipson-cid') : null }),
+        body: JSON.stringify({ session_id: sessionId, amount: cents, author_name: authorName || null, client_id: getClientId() }),
       })
       const d = await res.json()
       if (!res.ok) throw new Error(d.error)

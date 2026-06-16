@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, notFound } from 'next/navigation'
 import {
   Loader2, CheckCircle2, ExternalLink, Copy, Check,
   Music2, Users, Zap, ListMusic, AlertCircle, Terminal
@@ -11,6 +11,8 @@ const SESSION_PAUSED = { code: 'TEST02', id: 'b0000000-0000-0000-0000-0000000000
 const SESSION_ENDED  = { code: 'TEST03', id: 'b0000000-0000-0000-0000-000000000003', name: 'Anniversaire Julie', status: 'ended' }
 
 export default function DevPage() {
+  // Hub de développement — indisponible en production
+  if ((process.env.NODE_ENV as string) === 'production') notFound()
   const router = useRouter()
   const [setupStatus, setSetupStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
   const [setupMsg, setSetupMsg] = useState('')

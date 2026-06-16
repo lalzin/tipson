@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Send, Sparkles, Loader2, X } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
+import { getClientId } from '@/lib/client-id'
 import dynamic from 'next/dynamic'
 
 const SuperMessageForm = dynamic(() => import('@/components/customer/SuperMessageForm'), { ssr: false })
@@ -67,7 +68,7 @@ export default function InteractionBar({ sessionId, displayEnabled, messagesEnab
     try {
       const res = await fetch(`/api/sessions/${sessionId}/messages`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text.trim(), author_name: authorName || null, is_super: true, client_id: localStorage.getItem('tipson-cid') }),
+        body: JSON.stringify({ text: text.trim(), author_name: authorName || null, is_super: true, client_id: getClientId() }),
       })
       const d = await res.json()
       if (!res.ok) setFeedback(d.error || 'Super message refusé')
@@ -83,7 +84,7 @@ export default function InteractionBar({ sessionId, displayEnabled, messagesEnab
     try {
       const res = await fetch(`/api/sessions/${sessionId}/messages`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: t, author_name: authorName || null, client_id: localStorage.getItem('tipson-cid') }),
+        body: JSON.stringify({ text: t, author_name: authorName || null, client_id: getClientId() }),
       })
       const d = await res.json()
       if (!res.ok) { setFeedback(d.error || 'Message refusé'); }

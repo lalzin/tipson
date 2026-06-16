@@ -4,6 +4,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import { Loader2, Sparkles } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
+import { getClientId } from '@/lib/client-id'
 import StripeCheckout from '@/components/customer/StripeCheckout'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -45,7 +46,7 @@ export default function SuperMessageForm({ sessionId, text, authorName, onSucces
   useEffect(() => {
     fetch('/api/stripe/super-message/intent', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: sessionId, text, author_name: authorName, client_id: typeof localStorage !== 'undefined' ? localStorage.getItem('tipson-cid') : null }),
+      body: JSON.stringify({ session_id: sessionId, text, author_name: authorName, client_id: getClientId() }),
     })
       .then(r => r.json())
       .then(d => {

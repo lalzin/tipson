@@ -16,6 +16,7 @@ import KaraokeView from '@/components/customer/KaraokeView'
 import JukeboxView from '@/components/customer/JukeboxView'
 import InteractionBar from '@/components/customer/InteractionBar'
 import ActiveRequests from '@/components/customer/ActiveRequests'
+import { getClientId } from '@/lib/client-id'
 import TipForm from '@/components/customer/TipForm'
 import VoteWall from '@/components/customer/VoteWall'
 import { Flame } from 'lucide-react'
@@ -182,12 +183,7 @@ export default function SessionPage() {
         setCustomerName(name)
       }
       // Identifiant d'appareil (limite par utilisateur, même invité)
-      let cid = localStorage.getItem('tipson-cid')
-      if (!cid) {
-        cid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2)
-        localStorage.setItem('tipson-cid', cid)
-      }
-      clientIdRef.current = cid
+      clientIdRef.current = getClientId()
 
       // Restaure les demandes en cours (épinglées). Migration de l'ancienne clé unique.
       let ids: string[] = []
