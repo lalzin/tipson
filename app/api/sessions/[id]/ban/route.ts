@@ -33,18 +33,28 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if ('error' in guard) return guard.error
   if (!isValidUuid(params.id)) return NextResponse.json({ error: 'Session invalide' }, { status: 400 })
 
-  const { request_id, block_ip, reason } = await req.json().catch(() => ({}))
-  if (!isValidUuid(request_id)) return NextResponse.json({ error: 'Demande invalide' }, { status: 400 })
-
+  const { request_id, message_id, block_ip, reason } = await req.json().catch(() => ({}))
   const admin = createServiceSupabaseClient()
-  const { data: r } = await admin
-    .from('requests')
-    .select('id, client_id, customer_user_id, ip, customer_name')
-    .eq('id', request_id)
-    .eq('session_id', params.id)
-    .single()
-  if (!r) return NextResponse.json({ error: 'Demande introuvable' }, { status: 404 })
 
+  // Identifie le participant à partir d'une demande OU d'un message
+  let r: { client_id: string | null; customer_user_id: string | null; ip: string | null; customer_name: string | null } | null = null
+  if (isValidUuid(request_id)) {
+    const { data } = await admin
+      .from('requests')
+      .select('client_id, customer_user_id, ip, customer_name')
+      .eq('id', request_id).eq('session_id', params.id).single()
+    r = data
+  } else if (isValidUuid(message_id)) {
+    const { data } = await admin
+      .from('messages')
+      .select('client_id, user_id, ip, author_name')
+      .eq('id', message_id).eq('session_id', params.id).single()
+    if (data) r = { client_id: data.client_id, customer_user_id: data.user_id, ip: data.ip, customer_name: data.author_name }
+  } else {
+    return NextResponse.json({ error: 'Demande ou message requis' }, { status: 400 })
+  }
+
+  if (!r) return NextResponse.json({ error: 'Élément introuvable' }, { status: 404 })
   if (!r.client_id && !r.customer_user_id && !r.ip) {
     return NextResponse.json({ error: 'Impossible d\'identifier ce participant.' }, { status: 422 })
   }

@@ -73,8 +73,8 @@ export default function TipForm({ sessionId, authorName, onSuccess, onClose }: {
   }
 
   return (
-    <main className="fixed inset-0 z-50 overflow-y-auto bg-gradient-to-b from-gray-950 via-amber-950/10 to-gray-950">
-      <div className="min-h-full flex flex-col px-6 pt-8 pb-10 max-w-md mx-auto w-full space-y-5">
+    <main className="min-h-screen bg-gradient-to-b from-gray-950 via-amber-950/10 to-gray-950">
+      <div className="min-h-screen flex flex-col px-6 pt-8 pb-10 max-w-md mx-auto w-full space-y-5">
         <button onClick={onClose} className="flex items-center gap-1 text-gray-400 hover:text-white transition text-sm self-start">
           <ArrowLeft className="w-4 h-4" /> Retour
         </button>

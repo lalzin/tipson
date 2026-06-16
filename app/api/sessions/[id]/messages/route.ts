@@ -91,6 +91,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     author_name: author_name ? String(author_name).slice(0, 40) : null,
     is_super: !!is_super,
     amount: 0,
+    client_id: client_id || null,
+    ip: getClientIp(req),
   })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

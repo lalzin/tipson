@@ -725,6 +725,15 @@ export default function SessionPage() {
   }
 
   // ─── CHOOSE (écran d'accueil : type de demande) ───────────────────
+  // ─── POURBOIRE AU CHAPEAU (page intégrée, comme une demande) ──────────
+  if (showTip) {
+    return (
+      <TipForm sessionId={id} authorName={customerName}
+        onClose={() => setShowTip(false)}
+        onSuccess={() => { setShowTip(false); setTipThanks(true); setTimeout(() => setTipThanks(false), 4000) }} />
+    )
+  }
+
   if (step === 'choose') {
     const hasBlacklist = blacklistTracks.length > 0
     const showExpress = session.express_enabled !== false
@@ -853,11 +862,6 @@ export default function SessionPage() {
         </div>
 
         {showWall && <VoteWall sessionId={id} clientId={clientIdRef.current} onClose={() => setShowWall(false)} />}
-        {showTip && (
-          <TipForm sessionId={id} authorName={customerName}
-            onClose={() => setShowTip(false)}
-            onSuccess={() => { setShowTip(false); setTipThanks(true); setTimeout(() => setTipThanks(false), 4000) }} />
-        )}
         {tipThanks && (
           <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-gray-950 font-bold px-5 py-3 rounded-2xl shadow-2xl animate-slide-in">
             💛 Merci pour le pourboire !

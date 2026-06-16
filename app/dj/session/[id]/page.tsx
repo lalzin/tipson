@@ -715,7 +715,7 @@ export default function DJSessionPage() {
                 {session.session_type !== 'karaoke' && (
                   <ConfigEntry label="📺 Mode visualisation" hint="Écran, thèmes, emojis…" beta onClick={() => setShowViz(true)} />
                 )}
-                <ConfigEntry label="🚫 Participants bannis" hint="Gérer / réintégrer" onClick={() => setShowBans(true)} />
+                <ConfigEntry label="🚫 Modération & bannissements" hint="Messages + IP, bannir / réintégrer" onClick={() => setShowBans(true)} />
               </div>
             </div>
           </div>

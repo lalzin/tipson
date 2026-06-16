@@ -271,3 +271,8 @@ create table if not exists session_bans (
 );
 create index if not exists idx_session_bans_session on session_bans (session_id);
 alter table session_bans enable row level security;
+
+-- Identifiants sur les messages (pour bannir depuis un message + voir l'IP côté DJ)
+alter table messages add column if not exists client_id text;
+alter table messages add column if not exists ip text;
+alter table messages add column if not exists user_id uuid;
