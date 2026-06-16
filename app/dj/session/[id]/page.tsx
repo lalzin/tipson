@@ -17,6 +17,7 @@ import PromoCodesModal from '@/components/dj/PromoCodesModal'
 import JukeboxBridge from '@/components/dj/JukeboxBridge'
 import StatsModal from '@/components/dj/StatsModal'
 import BansModal from '@/components/dj/BansModal'
+import { LogoMark } from '@/components/Logo'
 import { DISPLAY_THEMES, EMOJI_PALETTE, displayEmojis, BG_OPTIONS } from '@/lib/displayThemes'
 
 type FilterStatus = 'paid' | 'approved' | 'played' | 'rejected' | 'all'
@@ -373,7 +374,7 @@ export default function DJSessionPage() {
                   ? <Mic2 className="w-5 h-5 text-pink-400" />
                   : session?.session_type === 'jukebox'
                   ? <Disc3 className="w-5 h-5 text-emerald-400" />
-                  : <span className="text-purple-300 font-black text-base">T</span>}
+                  : <LogoMark className="w-6 h-6 text-purple-300" />}
               </div>
               <div>
                 <p className="font-bold text-sm lg:text-lg leading-tight truncate max-w-[200px] lg:max-w-none">{session?.name}</p>

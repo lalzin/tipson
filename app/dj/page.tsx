@@ -3,6 +3,7 @@ import { useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Loader2, Eye, EyeOff, Mail, CheckCircle2 } from 'lucide-react'
+import { LogoBadge } from '@/components/Logo'
 
 type Mode = 'login' | 'signup'
 
@@ -113,9 +114,7 @@ function DJAuth() {
     <main className="min-h-screen flex items-center justify-center px-6 bg-gradient-to-br from-gray-950 via-purple-950/20 to-gray-950">
       <div className="w-full max-w-md space-y-7">
         <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-purple-600/20 border border-purple-500/30">
-            <span className="text-purple-300 font-black text-4xl">T</span>
-          </div>
+          <LogoBadge className="w-20 h-20 mx-auto" rounded={26} />
           <div>
             <h1 className="text-3xl font-black tracking-tight">TIPSON</h1>
             <p className="text-gray-400 text-sm mt-1">

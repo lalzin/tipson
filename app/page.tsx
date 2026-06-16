@@ -5,6 +5,7 @@ import {
   ArrowRight, Radio, ListMusic, Sparkles, Disc3, ScanLine, Flame,
 } from 'lucide-react'
 import LandingNav from '@/components/LandingNav'
+import { LogoBadge } from '@/components/Logo'
 import Reveal from '@/components/landing/Reveal'
 import TiltCard from '@/components/landing/TiltCard'
 import HeroScene from '@/components/landing/HeroScene'
@@ -189,9 +190,7 @@ export default function LandingPage() {
         <footer className="relative border-t border-white/5">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 text-sm text-gray-500 sm:flex-row sm:px-8">
             <div className="flex items-center gap-2">
-              <div className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-br from-fuchsia-500 to-cyan-400">
-                <span className="font-display text-xs font-black text-gray-950">T</span>
-              </div>
+              <LogoBadge className="h-6 w-6" rounded={16} />
               <span className="font-display font-bold text-gray-300">TIPSON</span>
             </div>
             <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">

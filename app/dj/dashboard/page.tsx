@@ -7,6 +7,7 @@ import {
   Settings, LogOut, Loader2, Copy, Check,
   QrCode, TrendingUp, Euro, Trash2, ChevronDown, ChevronUp, Mic2, RotateCcw, Crown
 } from 'lucide-react'
+import { LogoBadge } from '@/components/Logo'
 import type { Session, Profile } from '@/types'
 import { cn, formatPrice } from '@/lib/utils'
 import NewSessionModal from '@/components/dj/NewSessionModal'
@@ -132,9 +133,7 @@ export default function DJDashboard() {
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 py-4 lg:py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {/* Logo grand */}
-            <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-2xl lg:rounded-3xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center flex-shrink-0">
-              <span className="text-purple-300 font-black text-base lg:text-2xl">T</span>
-            </div>
+            <LogoBadge className="w-10 h-10 lg:w-14 lg:h-14 flex-shrink-0" />
             <div>
               <p className="font-black text-base lg:text-xl leading-none tracking-tight">TIPSON</p>
               <p className="text-gray-500 text-xs lg:text-sm mt-0.5 leading-none">{profile?.dj_name}</p>

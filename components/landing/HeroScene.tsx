@@ -1,6 +1,7 @@
 'use client'
 import { useRef, useState } from 'react'
 import { Zap, Music2, Heart } from 'lucide-react'
+import { LogoMark } from '@/components/Logo'
 
 // Scène 3D du héros : platine vinyle qui tourne + cartes de demande flottantes,
 // le tout avec une parallaxe douce qui suit le curseur.
@@ -48,8 +49,8 @@ export default function HeroScene() {
           {/* étiquette centrale */}
           <div className="absolute left-1/2 top-1/2 h-[34%] w-[34%] -translate-x-1/2 -translate-y-1/2 rounded-full grid place-items-center"
             style={{ background: 'linear-gradient(135deg, #d946ef, #22d3ee)' }}>
-            <span className="font-display text-2xl font-black text-gray-950">T</span>
-            <span className="absolute h-3 w-3 rounded-full bg-gray-950" />
+            <LogoMark className="w-[55%] h-[55%] text-gray-950" />
+            <span className="absolute h-3 w-3 rounded-full bg-gray-950/80" />
           </div>
         </div>
       </div>

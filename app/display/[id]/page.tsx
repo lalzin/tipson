@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import type { Session, Message } from '@/types'
 import { displayColors } from '@/lib/displayThemes'
 import { Maximize2, Minimize2 } from 'lucide-react'
+import { LogoBadge } from '@/components/Logo'
 
 type Floating = { id: number; emoji: string; left: number }
 
@@ -210,9 +211,7 @@ export default function DisplayPage() {
 
       {/* En-tête : logo + nom */}
       <div className="absolute top-6 left-8 z-20 flex items-center gap-3">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-xl">
-          <span className="font-black text-2xl">T</span>
-        </div>
+        <LogoBadge className="w-12 h-12 shadow-xl" />
         <div>
           <p className="font-black text-2xl tracking-tight leading-none">TIPSON</p>
           <p className="text-white/60 text-sm mt-1">{session.profiles?.dj_name ?? session.name}</p>

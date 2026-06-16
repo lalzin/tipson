@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { User, LayoutDashboard, Shield } from 'lucide-react'
+import { LogoBadge } from '@/components/Logo'
 
 type State =
   | { status: 'loading' }
@@ -41,9 +42,7 @@ export default function LandingNav() {
     <nav className="sticky top-0 z-30 backdrop-blur bg-gray-950/70 border-b border-white/5">
       <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-900/30">
-            <span className="font-black text-lg">T</span>
-          </div>
+          <LogoBadge className="w-9 h-9 shadow-lg shadow-purple-900/30" />
           <span className="font-black text-lg tracking-tight">TIPSON</span>
         </Link>
 

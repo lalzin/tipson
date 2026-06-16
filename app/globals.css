@@ -6,6 +6,11 @@
   body {
     @apply bg-gray-950 text-white;
   }
+  /* Couleurs du logo — modifiables ici pour recolorer le badge partout. */
+  :root {
+    --logo-bg: #5b4fe6;
+    --logo-fg: #ffffff;
+  }
 }
 
 @layer utilities {
