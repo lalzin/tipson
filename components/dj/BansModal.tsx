@@ -88,17 +88,22 @@ export default function BansModal({ sessionId, onClose }: { sessionId: string; o
                           {m.is_super && <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">SUPER</span>}
                         </p>
                         <p className="text-sm text-gray-300 break-words mt-0.5">{m.text}</p>
-                        <p className="text-[11px] text-gray-600 mt-1 font-mono">
-                          {m.ip || 'IP inconnue'} · {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                        <p className="text-[11px] text-gray-600 mt-1 font-mono flex flex-wrap gap-x-2">
+                          <span>{m.ip ? `IP ${m.ip}` : 'IP inconnue'}</span>
+                          {m.client_id && <span className="text-gray-500">· appareil {m.client_id.slice(0, 6)}</span>}
+                          {m.user_id && <span className="text-purple-400/70">· compte</span>}
+                          <span>· {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                         </p>
                       </div>
                       {m.banned ? (
                         <span className="text-[11px] text-red-400 flex items-center gap-1 flex-shrink-0"><Ban className="w-3.5 h-3.5" /> banni</span>
-                      ) : (
+                      ) : (m.client_id || m.ip || m.user_id) ? (
                         <button onClick={() => banFromMessage(m)} disabled={busy === m.id}
                           className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-600/15 border border-red-500/25 text-red-300 hover:bg-red-600/25 text-xs font-medium transition flex-shrink-0 disabled:opacity-50">
                           {busy === m.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ban className="w-3.5 h-3.5" />} Bannir
                         </button>
+                      ) : (
+                        <span className="text-[10px] text-gray-600 flex-shrink-0">non identifiable</span>
                       )}
                     </div>
                   </div>

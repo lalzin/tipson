@@ -21,10 +21,17 @@ function sweep(now: number) {
   })
 }
 
-export function getClientIp(req: NextRequest): string {
+// IP réelle du client. null si introuvable (ex. localhost en dev) → on ne stocke
+// jamais « unknown » pour éviter de faire matcher tous les invités entre eux.
+export function getClientIp(req: NextRequest): string | null {
   const fwd = req.headers.get('x-forwarded-for')
-  if (fwd) return fwd.split(',')[0].trim()
-  return req.headers.get('x-real-ip') || 'unknown'
+  if (fwd) { const first = fwd.split(',')[0].trim(); if (first) return first }
+  const real = req.headers.get('x-real-ip')
+  if (real) return real.trim()
+  const vercel = req.headers.get('x-vercel-forwarded-for')
+  if (vercel) { const first = vercel.split(',')[0].trim(); if (first) return first }
+  const direct = (req as any).ip
+  return direct || null
 }
 
 interface LimitOptions {
@@ -46,7 +53,7 @@ export function rateLimit(req: NextRequest, opts: LimitOptions): NextResponse | 
   const now = Date.now()
   sweep(now)
 
-  const ip = getClientIp(req)
+  const ip = getClientIp(req) || 'unknown'
   const key = `${opts.bucket}:${ip}`
   const existing = store.get(key)
 
