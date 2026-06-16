@@ -6,6 +6,13 @@ import { formatPrice } from '@/lib/utils'
 
 const FROM = process.env.EMAIL_FROM || 'TIPSON <onboarding@resend.dev>'
 
+// Base URL publique (pour le logo hébergé dans les emails)
+const APP_URL = (() => {
+  const e = process.env.NEXT_PUBLIC_APP_URL
+  if (e && !/localhost|127\.0\.0\.1/.test(e)) return e.replace(/\/$/, '')
+  return 'https://www.tipson.online'
+})()
+
 export async function sendEmail(opts: { to: string; subject: string; html: string }): Promise<boolean> {
   const key = process.env.RESEND_API_KEY
   if (!key || !opts.to) return false
@@ -23,41 +30,73 @@ export async function sendEmail(opts: { to: string; subject: string; html: strin
   }
 }
 
-// ── Gabarit de base (sombre, branding TIPSON) ───────────────────────────────
-function layout(title: string, body: string): string {
-  return `<!doctype html><html><body style="margin:0;background:#0a0a0f;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#e5e7eb;">
-  <div style="max-width:520px;margin:0 auto;padding:32px 20px;">
-    <div style="text-align:center;margin-bottom:24px;">
-      <div style="display:inline-block;width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#9333ea,#db2777);line-height:48px;text-align:center;font-weight:900;font-size:22px;color:#fff;">T</div>
-      <div style="font-weight:800;letter-spacing:.04em;margin-top:8px;color:#fff;">TIPSON</div>
-    </div>
-    <div style="background:#13131c;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:24px;">
-      <h1 style="margin:0 0 12px;font-size:20px;color:#fff;">${title}</h1>
-      ${body}
-    </div>
-    <p style="text-align:center;color:#6b7280;font-size:12px;margin-top:20px;">TIPSON · la soirée dirigée par le public<br/>Cet email vous a été envoyé suite à votre activité sur une soirée.</p>
-  </div></body></html>`
+// ── Gabarit « after-dark » (assorti à la landing : néon fuchsia→cyan) ────────
+// Layout en tables + styles inline pour la compatibilité clients mail.
+function layout(opts: { eyebrow: string; title: string; body: string; cta?: { label: string; href: string } }): string {
+  const cta = opts.cta ? `
+    <tr><td style="padding:8px 0 4px;">
+      <a href="${opts.cta.href}" style="display:inline-block;background:#d946ef;background-image:linear-gradient(135deg,#d946ef,#22d3ee);color:#06060b;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:14px;font-size:14px;">${opts.cta.label}</a>
+    </td></tr>` : ''
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"></head>
+  <body style="margin:0;padding:0;background:#06060b;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#06060b;background-image:radial-gradient(900px 400px at 50% -120px, rgba(217,70,239,.18), transparent), radial-gradient(700px 360px at 100% 0%, rgba(34,211,238,.12), transparent);">
+    <tr><td align="center" style="padding:36px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+        <!-- en-tête logo -->
+        <tr><td align="center" style="padding-bottom:22px;">
+          <img src="${APP_URL}/icon-192.png" width="46" height="46" alt="TIPSON" style="display:inline-block;border-radius:14px;vertical-align:middle;">
+          <span style="font-family:'Trebuchet MS',Helvetica,Arial,sans-serif;font-weight:800;font-size:20px;letter-spacing:.14em;color:#ffffff;vertical-align:middle;margin-left:10px;">TIPSON</span>
+        </td></tr>
+        <!-- carte -->
+        <tr><td style="background:#0f0f17;border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:28px 26px;">
+          <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;font-weight:700;color:#d946ef;margin-bottom:10px;">${opts.eyebrow}</div>
+          <h1 style="margin:0 0 16px;font-family:'Trebuchet MS',Helvetica,Arial,sans-serif;font-size:24px;line-height:1.2;color:#ffffff;">${opts.title}</h1>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="color:#cbd5e1;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;">
+            ${opts.body}
+            ${cta}
+          </table>
+        </td></tr>
+        <!-- pied -->
+        <tr><td align="center" style="padding-top:20px;">
+          <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#6b7280;line-height:1.6;">
+            <span style="color:#9ca3af;">TIPSON</span> · la nuit appartient à la foule<br/>
+            <a href="${APP_URL}" style="color:#a78bfa;text-decoration:none;">www.tipson.online</a>
+          </div>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table></body></html>`
 }
 
 function row(label: string, value: string): string {
-  return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);">
-    <span style="color:#9ca3af;">${label}</span><span style="color:#fff;font-weight:600;">${value}</span></div>`
+  return `<tr>
+    <td style="padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07);color:#94a3b8;">${label}</td>
+    <td align="right" style="padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07);color:#ffffff;font-weight:600;">${value}</td>
+  </tr>`
+}
+function card(rowsHtml: string): string {
+  return `<tr><td colspan="2" style="padding:4px 0 14px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a12;border-radius:14px;padding:6px 16px;">${rowsHtml}</table>
+  </td></tr>`
+}
+function para(text: string): string {
+  return `<tr><td colspan="2" style="padding:0 0 14px;color:#cbd5e1;line-height:1.6;">${text}</td></tr>`
 }
 
 // ── Reçu client après paiement ──────────────────────────────────────────────
 export function receiptHtml(p: { amountCents: number; label: string; djName?: string; sessionName?: string; date?: Date }): string {
   const d = p.date || new Date()
-  const body = `
-    <p style="color:#9ca3af;margin:0 0 16px;">Merci ! Voici le reçu de votre paiement.</p>
-    <div style="background:#0d0d14;border-radius:14px;padding:14px 16px;margin-bottom:16px;">
-      ${row('Montant', `<span style="color:#34d399;">${formatPrice(p.amountCents)}</span>`)}
-      ${row('Objet', p.label)}
-      ${p.sessionName ? row('Soirée', p.sessionName) : ''}
-      ${p.djName ? row('Organisateur', p.djName) : ''}
-      ${row('Date', d.toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' }))}
-    </div>
-    <p style="color:#6b7280;font-size:13px;margin:0;">Paiement traité de façon sécurisée par Stripe.</p>`
-  return layout('Reçu de paiement', body)
+  const body =
+    para('Merci pour votre participation 🎶 Voici le reçu de votre paiement.') +
+    card(
+      row('Montant', `<span style="color:#34d399;">${formatPrice(p.amountCents)}</span>`) +
+      row('Objet', escapeHtml(p.label)) +
+      (p.sessionName ? row('Soirée', escapeHtml(p.sessionName)) : '') +
+      (p.djName ? row('Organisateur', escapeHtml(p.djName)) : '') +
+      row('Date', d.toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' }))
+    ) +
+    para('<span style="color:#6b7280;font-size:13px;">Paiement traité de façon sécurisée par Stripe.</span>')
+  return layout({ eyebrow: 'Reçu', title: 'C\'est noté, merci !', body })
 }
 
 // ── Récap de soirée pour le DJ ──────────────────────────────────────────────
@@ -66,19 +105,19 @@ export function recapHtml(p: {
   revenueCents: number; played: number; requests: number
   topTracks?: { song: string; artist: string; count: number }[]
 }): string {
-  const top = (p.topTracks || []).slice(0, 5)
-    .map((t, i) => `<div style="display:flex;gap:10px;padding:6px 0;"><span style="color:#6b7280;width:18px;">${i + 1}</span><span style="color:#fff;flex:1;">${escapeHtml(t.song)} <span style="color:#9ca3af;">· ${escapeHtml(t.artist)}</span></span><span style="color:#9ca3af;">×${t.count}</span></div>`)
+  const topRows = (p.topTracks || []).slice(0, 5)
+    .map((t, i) => row(`<span style="color:#6b7280;">${i + 1}.</span> ${escapeHtml(t.song)} <span style="color:#94a3b8;">· ${escapeHtml(t.artist)}</span>`, `×${t.count}`))
     .join('')
-  const body = `
-    <p style="color:#9ca3af;margin:0 0 16px;">Votre soirée <strong style="color:#fff;">${escapeHtml(p.sessionName)}</strong> est terminée. Voici le bilan.</p>
-    <div style="background:#0d0d14;border-radius:14px;padding:14px 16px;margin-bottom:16px;">
-      ${row('Revenus', `<span style="color:#34d399;">${formatPrice(p.revenueCents)}</span>`)}
-      ${row('Sons joués', String(p.played))}
-      ${row('Demandes', String(p.requests))}
-    </div>
-    ${top ? `<p style="color:#9ca3af;font-size:13px;margin:0 0 6px;">Sons les plus demandés</p><div style="background:#0d0d14;border-radius:14px;padding:8px 16px;">${top}</div>` : ''}
-    <p style="color:#6b7280;font-size:13px;margin:16px 0 0;">Merci d'avoir animé avec TIPSON 🎶</p>`
-  return layout('Bilan de soirée', body)
+  const body =
+    para(`Votre soirée <strong style="color:#fff;">${escapeHtml(p.sessionName)}</strong> est terminée. Voici le bilan.`) +
+    card(
+      row('Revenus', `<span style="color:#34d399;">${formatPrice(p.revenueCents)}</span>`) +
+      row('Sons joués', String(p.played)) +
+      row('Demandes', String(p.requests))
+    ) +
+    (topRows ? para('<span style="color:#94a3b8;font-size:13px;">Sons les plus demandés</span>') + card(topRows) : '') +
+    para('<span style="color:#6b7280;font-size:13px;">Merci d\'avoir animé avec TIPSON 🎶</span>')
+  return layout({ eyebrow: 'Bilan', title: 'Votre soirée en chiffres', body, cta: { label: 'Créer une nouvelle soirée', href: APP_URL + '/dj/dashboard' } })
 }
 
 function escapeHtml(s: string): string {
