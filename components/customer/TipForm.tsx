@@ -63,7 +63,7 @@ export default function TipForm({ sessionId, authorName, onSuccess, onClose }: {
     try {
       const res = await fetch('/api/stripe/tip/intent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, amount: cents, author_name: authorName || null }),
+        body: JSON.stringify({ session_id: sessionId, amount: cents, author_name: authorName || null, client_id: typeof localStorage !== 'undefined' ? localStorage.getItem('tipson-cid') : null }),
       })
       const d = await res.json()
       if (!res.ok) throw new Error(d.error)

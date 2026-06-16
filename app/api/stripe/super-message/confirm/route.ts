@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceSupabaseClient } from '@/lib/supabase-server'
 import { getPaymentIntent } from '@/lib/stripe'
+import { recordSuperMessageFromIntent } from '@/lib/payment-records'
 import { rateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
@@ -21,25 +21,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Paiement invalide' }, { status: 400 })
   }
 
-  const admin = createServiceSupabaseClient()
-
-  // Idempotence : ne pas réinsérer si déjà publié
-  const { data: existing } = await admin
-    .from('messages')
-    .select('id')
-    .eq('stripe_payment_intent_id', payment_intent_id)
-    .maybeSingle()
-  if (existing) return NextResponse.json({ ok: true })
-
-  const { error } = await admin.from('messages').insert({
-    session_id: intent.metadata.session_id,
-    text: intent.metadata.text,
-    author_name: intent.metadata.author_name || null,
-    is_super: true,
-    amount: intent.amount,
-    stripe_payment_intent_id: payment_intent_id,
-  })
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  await recordSuperMessageFromIntent(intent) // idempotent (aussi géré par le webhook)
   return NextResponse.json({ ok: true })
 }

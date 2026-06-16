@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase'
 import {
   ArrowLeft, Check, X, Play, Clock, Zap,
   Music2, Loader2, Euro, ListMusic, Bell, BellOff, Volume2, VolumeX,
-  ChevronDown, ChevronRight, Pause, StopCircle, Share2, Users, Download, Mic2, RotateCcw, Disc3
+  ChevronDown, ChevronRight, Pause, StopCircle, Share2, Users, Download, Mic2, RotateCcw, Disc3, Ban
 } from 'lucide-react'
 import type { Request, Session } from '@/types'
 import { cn, formatPrice } from '@/lib/utils'
@@ -16,6 +16,7 @@ import BlacklistModal from '@/components/dj/BlacklistModal'
 import PromoCodesModal from '@/components/dj/PromoCodesModal'
 import JukeboxBridge from '@/components/dj/JukeboxBridge'
 import StatsModal from '@/components/dj/StatsModal'
+import BansModal from '@/components/dj/BansModal'
 import { DISPLAY_THEMES, EMOJI_PALETTE, displayEmojis, BG_OPTIONS } from '@/lib/displayThemes'
 
 type FilterStatus = 'paid' | 'approved' | 'played' | 'rejected' | 'all'
@@ -30,6 +31,7 @@ export default function DJSessionPage() {
   const [dragId, setDragId] = useState<string | null>(null)
   const [showStats, setShowStats] = useState(false)
   const [showConfig, setShowConfig] = useState(false)
+  const [showBans, setShowBans] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [notifEnabled, setNotifEnabled] = useState(false)
   const [showQR, setShowQR] = useState(false)
@@ -171,6 +173,21 @@ export default function DJSessionPage() {
   function openDisplay() {
     if (session && !(session as any).display_enabled) updateConfig({ display_enabled: true })
     window.open(`/display/${id}`, '_blank', 'noopener')
+  }
+
+  async function banParticipant(reqId: string, name?: string) {
+    if (!confirm(`Bannir ${name || 'ce participant'} de cette soirée ?\nSes demandes en cours seront retirées et il ne pourra plus participer (sur cet appareil/compte).`)) return
+    const res = await fetch(`/api/sessions/${id}/ban`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ request_id: reqId }),
+    })
+    if (res.ok) {
+      const r = await fetch(`/api/sessions/${id}/requests`)
+      if (r.ok) setRequests(await r.json())
+    } else {
+      const d = await res.json().catch(() => ({}))
+      alert(d.error || 'Bannissement impossible')
+    }
   }
 
   async function updateRequest(reqId: string, status: string) {
@@ -570,7 +587,8 @@ export default function DJSessionPage() {
                         <RequestCard key={req.id} request={req}
                           onApprove={() => updateRequest(req.id, 'approved')}
                           onReject={() => updateRequest(req.id, 'rejected')}
-                          onPlayed={() => updateRequest(req.id, 'played')} />
+                          onPlayed={() => updateRequest(req.id, 'played')}
+                          onBan={() => banParticipant(req.id, req.customer_name)} />
                       ))}
                     </div>
                   )}
@@ -598,7 +616,8 @@ export default function DJSessionPage() {
                           <RequestCard request={req}
                             onApprove={() => updateRequest(req.id, 'approved')}
                             onReject={() => updateRequest(req.id, 'rejected')}
-                            onPlayed={() => updateRequest(req.id, 'played')} />
+                            onPlayed={() => updateRequest(req.id, 'played')}
+                          onBan={() => banParticipant(req.id, req.customer_name)} />
                         </div>
                       ))}
                     </div>
@@ -619,7 +638,8 @@ export default function DJSessionPage() {
                         <RequestCard key={req.id} request={req}
                           onApprove={() => updateRequest(req.id, 'approved')}
                           onReject={() => updateRequest(req.id, 'rejected')}
-                          onPlayed={() => updateRequest(req.id, 'played')} />
+                          onPlayed={() => updateRequest(req.id, 'played')}
+                          onBan={() => banParticipant(req.id, req.customer_name)} />
                       ))}
                     </div>
                   )}
@@ -643,6 +663,9 @@ export default function DJSessionPage() {
 
       {showStats && session && (
         <StatsModal sessionId={session.id} requests={requests} onClose={() => setShowStats(false)} />
+      )}
+      {showBans && session && (
+        <BansModal sessionId={session.id} onClose={() => setShowBans(false)} />
       )}
 
       {/* Configurateur global de la soirée — reste ouvert en arrière-plan (z-40) :
@@ -692,6 +715,7 @@ export default function DJSessionPage() {
                 {session.session_type !== 'karaoke' && (
                   <ConfigEntry label="📺 Mode visualisation" hint="Écran, thèmes, emojis…" beta onClick={() => setShowViz(true)} />
                 )}
+                <ConfigEntry label="🚫 Participants bannis" hint="Gérer / réintégrer" onClick={() => setShowBans(true)} />
               </div>
             </div>
           </div>
@@ -1019,11 +1043,12 @@ function ConfigEntry({ label, hint, onClick, beta }: { label: string; hint: stri
   )
 }
 
-function RequestCard({ request, onApprove, onReject, onPlayed }: {
+function RequestCard({ request, onApprove, onReject, onPlayed, onBan }: {
   request: Request
   onApprove: () => void
   onReject: () => void
   onPlayed: () => void
+  onBan?: () => void
 }) {
   const isPending = request.status === 'paid'
   const isApproved = request.status === 'approved'
@@ -1118,6 +1143,14 @@ function RequestCard({ request, onApprove, onReject, onPlayed }: {
           className="w-full py-2.5 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-300 hover:bg-purple-600/30 font-semibold text-sm flex items-center justify-center gap-1.5 transition active:scale-[0.97]"
         >
           <Play className="w-4 h-4" /> Marquer comme jouée
+        </button>
+      )}
+
+      {/* Bannir le participant (anti-troll) — pas pour les pourboires */}
+      {onBan && request.request_type !== 'tip' && (
+        <button onClick={onBan}
+          className="w-full text-gray-700 hover:text-red-400 text-[11px] flex items-center justify-center gap-1 transition">
+          <Ban className="w-3 h-3" /> Bannir ce participant
         </button>
       )}
     </div>

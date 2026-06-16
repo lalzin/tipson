@@ -67,7 +67,7 @@ export default function InteractionBar({ sessionId, displayEnabled, messagesEnab
     try {
       const res = await fetch(`/api/sessions/${sessionId}/messages`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text.trim(), author_name: authorName || null, is_super: true }),
+        body: JSON.stringify({ text: text.trim(), author_name: authorName || null, is_super: true, client_id: localStorage.getItem('tipson-cid') }),
       })
       const d = await res.json()
       if (!res.ok) setFeedback(d.error || 'Super message refusé')
@@ -83,7 +83,7 @@ export default function InteractionBar({ sessionId, displayEnabled, messagesEnab
     try {
       const res = await fetch(`/api/sessions/${sessionId}/messages`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: t, author_name: authorName || null }),
+        body: JSON.stringify({ text: t, author_name: authorName || null, client_id: localStorage.getItem('tipson-cid') }),
       })
       const d = await res.json()
       if (!res.ok) { setFeedback(d.error || 'Message refusé'); }

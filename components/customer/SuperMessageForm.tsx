@@ -60,7 +60,7 @@ export default function SuperMessageForm({ sessionId, text, authorName, onSucces
   useEffect(() => {
     fetch('/api/stripe/super-message/intent', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: sessionId, text, author_name: authorName }),
+      body: JSON.stringify({ session_id: sessionId, text, author_name: authorName, client_id: typeof localStorage !== 'undefined' ? localStorage.getItem('tipson-cid') : null }),
     })
       .then(r => r.json())
       .then(d => {

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
 import { stripe, platformFee } from '@/lib/stripe'
 import { getPlatformCommission } from '@/lib/platform-settings'
-import { rateLimit, isValidUuid } from '@/lib/rate-limit'
+import { rateLimit, isValidUuid, getClientIp } from '@/lib/rate-limit'
+import { bannedGuard } from '@/lib/bans'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,8 +12,11 @@ export async function POST(req: NextRequest) {
   const limited = rateLimit(req, { bucket: 'tip-intent', limit: 15, windowMs: 60_000 })
   if (limited) return limited
 
-  const { session_id, amount, author_name } = await req.json()
+  const { session_id, amount, author_name, client_id } = await req.json()
   if (!isValidUuid(session_id)) return NextResponse.json({ error: 'Session invalide' }, { status: 400 })
+
+  const banned = await bannedGuard(session_id, { clientId: client_id, ip: getClientIp(req) })
+  if (banned) return banned
 
   const cents = Math.round(Number(amount))
   if (!Number.isFinite(cents) || cents < 100) return NextResponse.json({ error: 'Montant minimum : 1 €' }, { status: 422 })

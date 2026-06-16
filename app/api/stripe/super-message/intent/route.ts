@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
 import { stripe, platformFee } from '@/lib/stripe'
 import { getPlatformCommission } from '@/lib/platform-settings'
-import { rateLimit, isValidUuid } from '@/lib/rate-limit'
+import { rateLimit, isValidUuid, getClientIp } from '@/lib/rate-limit'
+import { bannedGuard } from '@/lib/bans'
 import { moderateMessage } from '@/lib/moderation'
 import { getOpenAIModeration } from '@/lib/openai-moderation'
 import { getToxicity, toxicityMessage } from '@/lib/perspective'
@@ -15,8 +16,11 @@ export async function POST(req: NextRequest) {
   const limited = rateLimit(req, { bucket: 'super-intent', limit: 15, windowMs: 60_000 })
   if (limited) return limited
 
-  const { session_id, text, author_name } = await req.json()
+  const { session_id, text, author_name, client_id } = await req.json()
   if (!isValidUuid(session_id)) return NextResponse.json({ error: 'Session invalide' }, { status: 400 })
+
+  const banned = await bannedGuard(session_id, { clientId: client_id, ip: getClientIp(req) })
+  if (banned) return banned
 
   const raw = String(text || '').trim()
   if (!raw || raw.length > 140) return NextResponse.json({ error: 'Message invalide' }, { status: 422 })

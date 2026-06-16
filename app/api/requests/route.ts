@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
-import { rateLimit, isValidUuid } from '@/lib/rate-limit'
+import { rateLimit, isValidUuid, getClientIp } from '@/lib/rate-limit'
 import { getMaxRequestsPerUser } from '@/lib/platform-settings'
+import { bannedGuard } from '@/lib/bans'
 
 // POST /api/requests — le client crée une demande
 export async function POST(req: NextRequest) {
@@ -50,6 +51,11 @@ export async function POST(req: NextRequest) {
   if (sessionError || !session) {
     return NextResponse.json({ error: 'Session introuvable ou inactive' }, { status: 404 })
   }
+
+  // Participant banni (appareil / compte / IP) → refus
+  const ip = getClientIp(req)
+  const banned = await bannedGuard(session_id, { clientId, userId: customer_user_id, ip })
+  if (banned) return banned
 
   const isKaraoke = session.session_type === 'karaoke'
 
@@ -195,6 +201,7 @@ export async function POST(req: NextRequest) {
       customer_user_id: customer_user_id || null,
       itunes_url: itunes_url || null,
       client_id: clientId,
+      ip,
     })
     .select()
     .single()

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
-import { rateLimit, isValidUuid } from '@/lib/rate-limit'
+import { rateLimit, isValidUuid, getClientIp } from '@/lib/rate-limit'
+import { bannedGuard } from '@/lib/bans'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,6 +27,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!request || !['paid', 'approved'].includes(request.status)) {
     return NextResponse.json({ error: 'Demande non votable' }, { status: 409 })
   }
+
+  const banned = await bannedGuard(request.session_id, { clientId, ip: getClientIp(req) })
+  if (banned) return banned
 
   // Enregistre le vote (ignore le doublon)
   const { error: voteErr } = await admin

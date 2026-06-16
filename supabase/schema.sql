@@ -253,3 +253,21 @@ alter table request_votes enable row level security;
 
 -- Mur de votes activable par soirée
 alter table sessions add column if not exists votes_enabled boolean not null default true;
+
+-- ════════════════ Bannissement de participants (anti-troll) ════════════════
+-- IP stockée sur la demande (référence pour bannir ; jamais affichée au public)
+alter table requests add column if not exists ip text;
+
+create table if not exists session_bans (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid not null references sessions(id) on delete cascade,
+  client_id text,
+  user_id uuid,
+  ip text,
+  block_ip boolean not null default false, -- l'IP n'est bloquée que si explicitement demandé (WiFi partagé en lieu = IP commune)
+  reason text,
+  label text,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_session_bans_session on session_bans (session_id);
+alter table session_bans enable row level security;

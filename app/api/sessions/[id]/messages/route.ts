@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
-import { rateLimit, isValidUuid } from '@/lib/rate-limit'
+import { rateLimit, isValidUuid, getClientIp } from '@/lib/rate-limit'
+import { bannedGuard } from '@/lib/bans'
 import { moderateMessage } from '@/lib/moderation'
 import { getOpenAIModeration } from '@/lib/openai-moderation'
 import { getToxicity, toxicityMessage } from '@/lib/perspective'
@@ -30,7 +31,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (limited) return limited
   if (!isValidUuid(params.id)) return NextResponse.json({ error: 'Session invalide' }, { status: 400 })
 
-  const { text, author_name, is_super } = await req.json()
+  const { text, author_name, is_super, client_id } = await req.json()
+
+  const banned = await bannedGuard(params.id, { clientId: client_id, ip: getClientIp(req) })
+  if (banned) return banned
 
   const admin = createServiceSupabaseClient()
   // select('*') → robuste même si certaines colonnes n'existent pas encore
