@@ -81,5 +81,20 @@ export async function PATCH(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Promotion en DJ → crée son compte Connect dès maintenant (best-effort).
+  // L'organisateur n'aura plus qu'à compléter l'onboarding pour ses versements.
+  if (updates.is_dj === true) {
+    try {
+      const { data: { user } } = await admin.auth.admin.getUserById(user_id)
+      if (user?.email) {
+        const { ensureConnectAccount } = await import('@/lib/connect')
+        await ensureConnectAccount({ userId: user_id, email: user.email, displayName: (data as any).dj_name })
+      }
+    } catch (e) {
+      console.error('Création compte Connect à la promotion DJ échouée (non bloquant):', e)
+    }
+  }
+
   return NextResponse.json(data)
 }

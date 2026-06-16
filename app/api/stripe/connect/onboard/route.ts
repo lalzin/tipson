@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthContext } from '@/lib/auth'
 import { createServerSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase-server'
-import { createConnectAccount, createOnboardingLink } from '@/lib/stripe'
+import { createOnboardingLink } from '@/lib/stripe'
+import { ensureConnectAccount } from '@/lib/connect'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,13 +26,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Compte organisateur requis' }, { status: 403 })
   }
 
-  const admin = createServiceSupabaseClient()
   const origin = resolveOrigin(req)
   const refreshUrl = `${origin}/dj/settings?onboarding=refresh`
   const returnUrl = `${origin}/dj/settings?onboarding=done`
 
-  // Email obligatoire pour un compte recipient. On le résout depuis l'auth
-  // (repli sur l'email du profil le cas échéant).
+  // Email obligatoire pour un compte recipient.
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   const contactEmail = user?.email || (auth.profile as any).email || ''
@@ -42,36 +41,28 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Crée un nouveau compte Connect et le persiste sur le profil
-  async function freshAccount(): Promise<string> {
-    const account = await createConnectAccount(contactEmail, auth!.profile.dj_name)
-    await admin.from('profiles')
-      .update({ stripe_account_id: account.id, charges_enabled: false, payouts_enabled: false })
-      .eq('id', auth!.userId)
-    return account.id
-  }
-
   try {
-    let accountId = auth.profile.stripe_account_id || await freshAccount()
+    // Garantit un compte recipient valide (réutilise si accessible + bonne config,
+    // sinon recrée). Idempotent → règle les comptes périmés/inaccessibles.
+    let accountId = await ensureConnectAccount({ userId: auth.userId, email: contactEmail, displayName: auth.profile.dj_name })
 
     try {
       const link = await createOnboardingLink(accountId, refreshUrl, returnUrl)
       return NextResponse.json({ url: link.url })
     } catch (err: any) {
-      // Le compte stocké est inutilisable par cette clé : créé avec d'anciennes
-      // clés (permission denied), supprimé (No such account), ou avec une
-      // configuration incompatible (configs_must_match). → on recrée et on réessaie.
+      // Filet de sécurité : si le lien échoue encore (config incompatible), on
+      // force une recréation et on réessaie une fois.
       const code = err?.code || err?.raw?.code || ''
       const msg = err?.raw?.message || err?.message || ''
       const staleAccount =
         code === 'configs_must_match_to_use_account_links'
-        || code === 'forbidden'
-        || code === 'resource_missing'
-        || code === 'account_invalid'
-        || /configs_must_match|configuration|no such account|does not have permission to access the object acct|permission denied/i.test(msg)
+        || code === 'forbidden' || code === 'resource_missing' || code === 'account_invalid'
+        || /configs_must_match|configuration|no such account|permission denied|access the object acct/i.test(msg)
       if (!staleAccount) throw err
 
-      accountId = await freshAccount()
+      const admin = createServiceSupabaseClient()
+      await admin.from('profiles').update({ stripe_account_id: null }).eq('id', auth.userId)
+      accountId = await ensureConnectAccount({ userId: auth.userId, email: contactEmail, displayName: auth.profile.dj_name })
       const link = await createOnboardingLink(accountId, refreshUrl, returnUrl)
       return NextResponse.json({ url: link.url })
     }
