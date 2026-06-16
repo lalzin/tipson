@@ -28,7 +28,7 @@ export function mergeWithSearch(exact: MusicLinks | null, song: string, artist: 
  * Résout les liens multi-plateformes (Deezer, Apple Music, Spotify, YouTube)
  * d'un morceau via l'API Odesli (song.link), à partir de son URL iTunes.
  *
- * Limites de débit : sans clé, ~10 req/min. Une clé (SONGLINK_API_KEY) lève cette
+ * Limites de débit : sans clé, ~10 req/min. Une clé (ODESLI_API_KEY) lève cette
  * limite. En cas de 429 (« too many requests »), on renvoie { rateLimited: true }
  * et l'appelant n'affiche aucun lien.
  */
@@ -36,12 +36,16 @@ export async function resolveMusicLinks(itunesUrl: string): Promise<
   { links: MusicLinks } | { rateLimited: true } | { error: string }
 > {
   const params = new URLSearchParams({ url: itunesUrl, userCountry: 'FR' })
-  const apiKey = process.env.SONGLINK_API_KEY
+  const apiKey = process.env.ODESLI_API_KEY || process.env.SONGLINK_API_KEY
   if (apiKey) params.set('key', apiKey)
+
+  // Avec une clé : domaine officiel api.odesli.co (limites de débit levées).
+  // Sans clé : api.song.link (public, ~10 req/min).
+  const base = apiKey ? 'https://api.odesli.co' : 'https://api.song.link'
 
   let res: Response
   try {
-    res = await fetch(`https://api.song.link/v1-alpha.1/links?${params.toString()}`, {
+    res = await fetch(`${base}/v1-alpha.1/links?${params.toString()}`, {
       // cache CDN court côté Next pour limiter les appels répétés
       next: { revalidate: 3600 },
     })
