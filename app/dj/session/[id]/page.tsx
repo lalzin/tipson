@@ -691,6 +691,9 @@ export default function DJSessionPage() {
                 <ConfigToggle label="🔥 Mur de votes (la foule décide)"
                   checked={(session as any).votes_enabled !== false}
                   onChange={v => updateConfig({ votes_enabled: v })} />
+                <ConfigToggle label="🔒 Réservé aux comptes connectés"
+                  checked={(session as any).require_login === true}
+                  onChange={v => updateConfig({ require_login: v })} />
                 {session.session_type !== 'jukebox' && (
                   <ConfigToggle label="⚡ Option express (passer devant)"
                     checked={(session as any).express_enabled !== false}

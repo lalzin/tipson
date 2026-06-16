@@ -276,3 +276,6 @@ alter table session_bans enable row level security;
 alter table messages add column if not exists client_id text;
 alter table messages add column if not exists ip text;
 alter table messages add column if not exists user_id uuid;
+
+-- Soirée réservée aux comptes connectés (pas d'accès invité)
+alter table sessions add column if not exists require_login boolean not null default false;

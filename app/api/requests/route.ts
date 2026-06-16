@@ -43,13 +43,18 @@ export async function POST(req: NextRequest) {
   // Vérifie que la session est active et récupère le type + prix
   const { data: session, error: sessionError } = await supabase
     .from('sessions')
-    .select('id, status, session_type, price_normal, price_priority, price_karaoke, price_karaoke_priority, price_blacklist')
+    .select('id, status, session_type, price_normal, price_priority, price_karaoke, price_karaoke_priority, price_blacklist, require_login')
     .eq('id', session_id)
     .eq('status', 'active')
     .single()
 
   if (sessionError || !session) {
     return NextResponse.json({ error: 'Session introuvable ou inactive' }, { status: 404 })
+  }
+
+  // Soirée réservée aux comptes connectés
+  if (session.require_login && !customer_user_id) {
+    return NextResponse.json({ error: 'Cette soirée nécessite un compte pour participer.' }, { status: 403 })
   }
 
   // Participant banni (appareil / compte / IP) → refus

@@ -42,6 +42,7 @@ export interface Session {
   display_show_venue: boolean
   display_show_name: boolean
   votes_enabled: boolean
+  require_login: boolean
   price_blacklist: number
   venue: string | null
   created_at: string

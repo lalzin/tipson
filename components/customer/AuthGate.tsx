@@ -8,12 +8,13 @@ interface Props {
   sessionName: string
   djName: string
   onAuth: () => void
+  allowGuest?: boolean // false → soirée réservée aux comptes (pas d'accès invité)
 }
 
 // Apple Sign-In masqué tant que le provider n'est pas configuré (compte Apple Developer requis)
 const APPLE_ENABLED = process.env.NEXT_PUBLIC_APPLE_AUTH_ENABLED === 'true'
 
-export default function AuthGate({ sessionName, djName, onAuth }: Props) {
+export default function AuthGate({ sessionName, djName, onAuth, allowGuest = true }: Props) {
   const [mode, setMode] = useState<'choice' | 'email' | 'sent'>('choice')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
@@ -149,15 +150,21 @@ export default function AuthGate({ sessionName, djName, onAuth }: Props) {
               Continuer avec l&apos;email
             </button>
 
-            {/* Invité */}
-            <button
-              onClick={continueAsGuest}
-              disabled={loading}
-              className="w-full py-3 text-gray-500 text-sm hover:text-gray-300 flex items-center justify-center gap-1.5 transition"
-            >
-              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
-              Continuer sans compte
-            </button>
+            {/* Invité — masqué si la soirée est réservée aux comptes */}
+            {allowGuest ? (
+              <button
+                onClick={continueAsGuest}
+                disabled={loading}
+                className="w-full py-3 text-gray-500 text-sm hover:text-gray-300 flex items-center justify-center gap-1.5 transition"
+              >
+                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
+                Continuer sans compte
+              </button>
+            ) : (
+              <p className="text-center text-gray-600 text-xs pt-1">
+                Cette soirée nécessite un compte pour participer.
+              </p>
+            )}
           </div>
         )}
 

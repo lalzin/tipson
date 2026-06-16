@@ -445,6 +445,7 @@ export default function SessionPage() {
           sessionName={session.name}
           djName={session.profiles?.dj_name ?? 'DJ'}
           onAuth={() => setGuestMode(true)}
+          allowGuest={session.require_login !== true}
         />
       )
     }
@@ -493,13 +494,15 @@ export default function SessionPage() {
     )
   }
 
-  // Affiche l'AuthGate si non connecté et pas en mode invité
-  if (!user && !guestMode) {
+  // Affiche l'AuthGate si non connecté et pas en mode invité.
+  // Si la soirée est réservée aux comptes, on ignore le mode invité.
+  if (!user && (!guestMode || session.require_login === true)) {
     return (
       <AuthGate
         sessionName={session.name}
         djName={session.profiles?.dj_name ?? 'DJ'}
         onAuth={() => setGuestMode(true)}
+        allowGuest={session.require_login !== true}
       />
     )
   }
