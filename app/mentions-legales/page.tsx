@@ -30,13 +30,10 @@ export default function LegalPage() {
         <Section title="1. Éditeur du site">
           <p>Le site et l&apos;application TIPSON sont édités par :</p>
           <ul className="list-none space-y-1.5 mt-2">
-            <li>Dénomination : <strong>MARZIN CONSULTING</strong></li>
-            <li>Forme juridique : SAS (société par actions simplifiée)</li>
-            <li>Siège social : Bureau 3, 5 allée de la Grande Treille, 35000 Rennes</li>
-            <li>SIREN : 100 068 568</li>
-            <li>SIRET (siège) : 100 068 568 00011</li>
+            <li>Dénomination : <strong>MARZIN CONSULTING</strong> (SAS)</li>
+            <li>Siège social : 5 allée de la Grande Treille, 35000 Rennes</li>
+            <li>SIREN : 100 068 568 (RCS Rennes)</li>
             <li>N° TVA intracommunautaire : FR28 100 068 568</li>
-            <li>Code APE : 62.02A — Conseil en systèmes et logiciels informatiques</li>
             <li>Email : <a href="mailto:contact@tipson.online" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">contact@tipson.online</a></li>
           </ul>
         </Section>

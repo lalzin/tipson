@@ -30,7 +30,7 @@ export default function TermsPage() {
         <Section title="1. Objet">
           <p>
             Les présentes conditions régissent l&apos;utilisation du service TIPSON, édité par
-            <strong> MARZIN CONSULTING</strong> (SAS, SIREN 100 068 568, Rennes), qui permet au public
+            <strong> MARZIN CONSULTING</strong>, qui permet au public
             d&apos;envoyer des demandes de morceaux à un DJ ou de rejoindre une file de karaoké lors d&apos;un
             événement, avec une option de participation payante. En utilisant le service, vous acceptez
             ces conditions.

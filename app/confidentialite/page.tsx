@@ -35,7 +35,7 @@ export default function PrivacyPage() {
 
         <Section title="1. Responsable du traitement">
           <p>
-            Le responsable du traitement est <strong>MARZIN CONSULTING</strong> (SAS, SIREN 100 068 568),
+            Le responsable du traitement est <strong>MARZIN CONSULTING</strong>,
             joignable à l&apos;adresse <a href="mailto:contact@tipson.online" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">contact@tipson.online</a>. Les informations complètes
             figurent dans les <Link href="/mentions-legales" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">mentions légales</Link>.
           </p>
