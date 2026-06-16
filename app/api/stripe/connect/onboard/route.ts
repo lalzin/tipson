@@ -30,11 +30,21 @@ export async function POST(req: NextRequest) {
   const refreshUrl = `${origin}/dj/settings?onboarding=refresh`
   const returnUrl = `${origin}/dj/settings?onboarding=done`
 
+  // Email obligatoire pour un compte recipient. On le résout depuis l'auth
+  // (repli sur l'email du profil le cas échéant).
+  const supabase = await createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const contactEmail = user?.email || (auth.profile as any).email || ''
+  if (!contactEmail || !contactEmail.includes('@')) {
+    return NextResponse.json(
+      { error: 'Ajoutez une adresse email à votre compte pour activer les versements.' },
+      { status: 400 }
+    )
+  }
+
   // Crée un nouveau compte Connect et le persiste sur le profil
   async function freshAccount(): Promise<string> {
-    const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    const account = await createConnectAccount(user?.email ?? undefined, auth!.profile.dj_name)
+    const account = await createConnectAccount(contactEmail, auth!.profile.dj_name)
     await admin.from('profiles')
       .update({ stripe_account_id: account.id, charges_enabled: false, payouts_enabled: false })
       .eq('id', auth!.userId)

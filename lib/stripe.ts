@@ -50,8 +50,16 @@ export async function createAuthorization(
 
 // ── Stripe Connect V2 (versements aux organisateurs) ────────────────────────
 
-/** Crée un compte connecté V2 (configuration "recipient") pour un organisateur. */
-export async function createConnectAccount(email?: string, displayName?: string) {
+/**
+ * Crée un compte connecté V2 (configuration "recipient") pour un organisateur.
+ * contact_email est OBLIGATOIRE pour la configuration recipient (vérifié en test :
+ * sinon Stripe renvoie « If configuration.recipient is supplied, the Account must
+ * have a contact email »). On l'exige donc explicitement.
+ */
+export async function createConnectAccount(email: string, displayName?: string) {
+  if (!email || !email.includes('@')) {
+    throw new Error('Un email est requis pour activer les versements (compte recipient).')
+  }
   return stripe.v2.core.accounts.create({
     display_name: displayName,
     contact_email: email,
