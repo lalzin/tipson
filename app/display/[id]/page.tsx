@@ -211,7 +211,7 @@ export default function DisplayPage() {
 
       {/* En-tête : logo + nom */}
       <div className="absolute top-6 left-8 z-20 flex items-center gap-3">
-        <LogoBadge className="w-12 h-12 shadow-xl" />
+        <LogoBadge className="w-12 h-12 shadow-xl" gradient={[c1, c2]} />
         <div>
           <p className="font-black text-2xl tracking-tight leading-none">TIPSON</p>
           <p className="text-white/60 text-sm mt-1">{session.profiles?.dj_name ?? session.name}</p>

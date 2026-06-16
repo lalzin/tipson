@@ -133,7 +133,7 @@ export default function DJDashboard() {
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 py-4 lg:py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {/* Logo grand */}
-            <LogoBadge className="w-10 h-10 lg:w-14 lg:h-14 flex-shrink-0" />
+            <LogoBadge className="w-10 h-10 lg:w-14 lg:h-14 flex-shrink-0" gradient={['#9333ea', '#db2777']} />
             <div>
               <p className="font-black text-base lg:text-xl leading-none tracking-tight">TIPSON</p>
               <p className="text-gray-500 text-xs lg:text-sm mt-0.5 leading-none">{profile?.dj_name}</p>

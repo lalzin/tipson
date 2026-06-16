@@ -57,7 +57,7 @@ function JoinForm() {
       <div className="w-full max-w-md space-y-10 relative">
         {/* Logo */}
         <div className="text-center space-y-3">
-          <LogoBadge className="w-20 h-20 shadow-xl shadow-purple-900/20 mx-auto" rounded={26} />
+          <LogoBadge className="w-20 h-20 shadow-xl shadow-purple-900/20 mx-auto" rounded={26} gradient={['#9333ea', '#db2777']} />
           <div>
             <h1 className="text-3xl font-black tracking-tight">TIPSON</h1>
             <p className="text-gray-500 text-sm mt-1">Demandez vos sons : DJ, karaoké ou jukebox</p>

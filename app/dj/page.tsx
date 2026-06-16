@@ -114,7 +114,7 @@ function DJAuth() {
     <main className="min-h-screen flex items-center justify-center px-6 bg-gradient-to-br from-gray-950 via-purple-950/20 to-gray-950">
       <div className="w-full max-w-md space-y-7">
         <div className="text-center space-y-4">
-          <LogoBadge className="w-20 h-20 mx-auto" rounded={26} />
+          <LogoBadge className="w-20 h-20 mx-auto" rounded={26} gradient={['#9333ea', '#db2777']} />
           <div>
             <h1 className="text-3xl font-black tracking-tight">TIPSON</h1>
             <p className="text-gray-400 text-sm mt-1">

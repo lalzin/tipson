@@ -190,7 +190,7 @@ export default function LandingPage() {
         <footer className="relative border-t border-white/5">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 text-sm text-gray-500 sm:flex-row sm:px-8">
             <div className="flex items-center gap-2">
-              <LogoBadge className="h-6 w-6" rounded={16} />
+              <LogoBadge className="h-6 w-6" rounded={16} gradient={['#d946ef', '#22d3ee']} />
               <span className="font-display font-bold text-gray-300">TIPSON</span>
             </div>
             <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">

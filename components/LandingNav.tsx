@@ -42,7 +42,7 @@ export default function LandingNav() {
     <nav className="sticky top-0 z-30 backdrop-blur bg-gray-950/70 border-b border-white/5">
       <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5">
-          <LogoBadge className="w-9 h-9 shadow-lg shadow-purple-900/30" />
+          <LogoBadge className="w-9 h-9 shadow-lg shadow-fuchsia-900/40" gradient={['#d946ef', '#22d3ee']} />
           <span className="font-black text-lg tracking-tight">TIPSON</span>
         </Link>
 

@@ -16,12 +16,28 @@ export function LogoMark({ className = "", title = "TIPSON" }: { className?: str
   )
 }
 
-export function LogoBadge({ className = "", rounded = 22, title = "TIPSON" }: { className?: string; rounded?: number; title?: string }) {
+export function LogoBadge({ className = "", rounded = 22, title = "TIPSON", bg, fg, gradient }: {
+  className?: string; rounded?: number; title?: string
+  bg?: string            // couleur de fond unie (sinon --logo-bg)
+  fg?: string            // couleur du glyphe (sinon --logo-fg)
+  gradient?: [string, string] // dégradé de fond (prioritaire sur bg) → match les pages
+}) {
+  const gid = gradient ? 'lgrad-' + gradient.join('').replace(/[^a-z0-9]/gi, '') : null
+  const fill = gid ? `url(#${gid})` : (bg || "var(--logo-bg, #5b4fe6)")
+  const fgColor = fg || "var(--logo-fg, #ffffff)"
   return (
     <svg viewBox="0 0 100 100" className={className} role="img" aria-label={title} xmlns="http://www.w3.org/2000/svg">
-      <rect width="100" height="100" rx={rounded} fill="var(--logo-bg, #5b4fe6)" />
+      {gid && gradient && (
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={gradient[0]} />
+            <stop offset="100%" stopColor={gradient[1]} />
+          </linearGradient>
+        </defs>
+      )}
+      <rect width="100" height="100" rx={rounded} fill={fill} />
       <g transform="translate(50 50) scale(0.2183) translate(-135.83 -142.00)">
-        {INNER("var(--logo-fg, #ffffff)")}
+        {INNER(fgColor)}
       </g>
     </svg>
   )
