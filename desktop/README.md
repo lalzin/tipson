@@ -26,6 +26,21 @@ npm run dev               # lance l'app en dev
 npm run build             # build de production (out/)
 ```
 
+## Binaire Electron / dépannage « Electron uninstall »
+Si `npm install` n'a pas pu télécharger le binaire Electron (proxy / antivirus /
+réseau), `npm run dev` ne plante plus : le script `scripts/run-electron.mjs`
+détecte automatiquement un binaire Electron **qui fonctionne**, dans cet ordre :
+1. la variable `ELECTRON_EXEC_PATH` si tu la définis ;
+2. le binaire fourni par **Electron Fiddle** (cache local, Mac/Win/Linux) ;
+3. le binaire de `node_modules/electron` s'il est complet.
+
+→ Le plus simple : installer **Electron Fiddle** (il télécharge un Electron
+complet) et lancer `npm run dev`. Pour forcer un binaire précis :
+```bash
+ELECTRON_EXEC_PATH="/chemin/vers/Electron.app/Contents/MacOS/Electron" npm run dev
+```
+Le `build` (`npm run build`) ne nécessite pas de binaire.
+
 ## Capture audio (terrain)
 - **Concert / XLR façade** : prendre un départ **booth/aux** → petite **interface
   audio USB** (la XDJ-RX3 est elle-même une interface USB) → mode « Ligne ».

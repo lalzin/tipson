@@ -6,9 +6,10 @@
   "author": "MARZIN CONSULTING",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "node scripts/run-electron.mjs dev",
+    "start": "node scripts/run-electron.mjs preview",
     "build": "electron-vite build",
-    "preview": "electron-vite preview",
+    "preview": "node scripts/run-electron.mjs preview",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json"
   },
   "dependencies": {
@@ -20,7 +21,7 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
-    "electron": "^31.3.0",
+    "electron": "^31.7.7",
     "electron-vite": "^2.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
