@@ -22,7 +22,11 @@ export default function App() {
         return prev
       })
     })
-    return () => sub.subscription.unsubscribe()
+    // Tokens renvoyés par tipson.online (deep-link tipson://) → on ouvre la session
+    const off = window.tipson.onAuthTokens(async ({ access_token, refresh_token }) => {
+      await supabase.auth.setSession({ access_token, refresh_token })
+    })
+    return () => { sub.subscription.unsubscribe(); off() }
   }, [])
 
   async function onCode(code: string) {

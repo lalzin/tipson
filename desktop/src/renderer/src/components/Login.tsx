@@ -19,15 +19,9 @@ export default function Login() {
 
   async function signInGoogle() {
     setError('')
-    // OAuth ouvert dans le navigateur système ; le retour de session se fait par
-    // refresh (Supabase persiste le token). En Phase 4 : deep-link tipson:// pour
-    // récupérer la session directement dans l'app.
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${API_BASE}/dj`, skipBrowserRedirect: true },
-    })
-    if (error) { setError(error.message); return }
-    if (data?.url) window.open(data.url, '_blank')
+    // On délègue à la page de relais de tipson.online : login Google dans le
+    // navigateur, puis retour de la session à l'app via le deep-link tipson://.
+    await window.tipson.openExternal(`${API_BASE}/desktop-auth`)
   }
 
   return (
