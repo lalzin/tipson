@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { LogoBadge } from './Logo'
 
 export default function CodeEntry({ onResolved, onSignOut }: {
   onResolved: (code: string) => Promise<void>
@@ -18,7 +19,7 @@ export default function CodeEntry({ onResolved, onSignOut }: {
   return (
     <div className="center">
       <div className="card">
-        <div className="logo">T</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><LogoBadge size={64} rounded={18} /></div>
         <h1>Code de la soirée</h1>
         <p className="sub">Entrez le code affiché par l'organisateur pour lancer le visualiseur.</p>
         <form onSubmit={submit}>

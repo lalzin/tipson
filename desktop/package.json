@@ -10,7 +10,10 @@
     "start": "node scripts/run-electron.mjs preview",
     "build": "electron-vite build",
     "preview": "node scripts/run-electron.mjs preview",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "package": "electron-vite build && electron-builder",
+    "package:mac": "electron-vite build && electron-builder --mac",
+    "package:win": "electron-vite build && electron-builder --win"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",
@@ -22,6 +25,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "electron": "^31.7.7",
+    "electron-builder": "^24.13.3",
     "electron-vite": "^2.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -47,6 +47,21 @@ Le `build` (`npm run build`) ne nécessite pas de binaire.
 - **Sans câblage** : mode « Micro » (ambiant).
 - **Sans audio** : mode « Beat seul » (pulse au tempo ; synchronisé par Pro DJ Link en Phase 3).
 
+## Packaging (installeurs)
+```bash
+npm run package:mac     # .dmg  (dans release/)
+npm run package:win     # .exe  (NSIS)
+npm run package         # plateforme courante
+```
+Le protocole `tipson://` (retour d'auth Google) est enregistré **à l'installation**
+de l'app packagée — c'est pourquoi le login Google fonctionne sur l'app installée
+mais pas toujours en `npm run dev`.
+
+> Signature/notarisation : décommenter `hardenedRuntime`/`notarize` dans
+> `electron-builder.yml` avec un compte Apple Developer pour distribuer sans
+> avertissement Gatekeeper. Côté Supabase, ajouter `https://www.tipson.online/desktop-auth`
+> dans Authentication → URL Configuration → Redirect URLs.
+
 ## Roadmap
 - **Phase 1-2 (faite)** : app + login + code + Butterchurn + sélecteur audio + overlay.
 - **Phase 3** : `prolink-connect` dans `src/main/prolink.ts` → BPM/beat/morceau réels
