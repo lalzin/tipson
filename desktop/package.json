@@ -1,0 +1,30 @@
+{
+  "name": "tipson-studio",
+  "version": "0.1.0",
+  "description": "Visualiseur de soirée TIPSON (Milkdrop/Butterchurn) réactif au son et aux platines.",
+  "main": "./out/main/index.js",
+  "author": "MARZIN CONSULTING",
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.1",
+    "butterchurn": "^3.0.0-beta.4",
+    "butterchurn-presets": "^3.0.0-beta.4"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "electron": "^31.3.0",
+    "electron-vite": "^2.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0"
+  }
+}
