@@ -1,0 +1,4 @@
+# L'app desktop (Electron) ne fait PAS partie du build web Vercel.
+desktop
+tests
+vitest.config.ts
