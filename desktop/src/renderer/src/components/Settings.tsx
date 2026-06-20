@@ -3,6 +3,7 @@ import type { StudioSession } from '../lib/session'
 import type { AudioMode, AudioDevice } from '../visual/audio'
 
 export interface OverlayToggles {
+  logo: boolean
   dj: boolean
   title: boolean
   venue: boolean
@@ -93,6 +94,7 @@ export default function Settings(props: {
 
       <h3>Éléments TIPSON</h3>
       <p className="muted" style={{ textAlign: 'left', marginTop: -4 }}>Chaque bloc est déplaçable à la souris sur l'écran.</p>
+      {Toggle('logo', 'Logo réactif (couleur/son)')}
       {Toggle('dj', 'Nom du DJ')}
       {Toggle('title', 'Titre de la soirée')}
       {Toggle('venue', 'Lieu')}

@@ -4,6 +4,7 @@ import { API_BASE } from '../lib/config'
 import type { StudioSession } from '../lib/session'
 import type { OverlayToggles } from './Settings'
 import Movable from './Movable'
+import ReactiveLogo from './ReactiveLogo'
 
 interface Floating { id: number; glyph: string; left: number }
 interface Msg { id: string; text: string; author_name: string | null; is_super: boolean }
@@ -20,9 +21,10 @@ interface Req {
 // Couche d'éléments TIPSON par-dessus le visualiseur (fond transparent).
 // Tous les blocs (en-tête, QR, demandes) sont librement déplaçables et
 // activables/désactivables depuis les Réglages — le DJ compose son écran.
-export default function Overlay({ session, toggles, onBeat }: {
+export default function Overlay({ session, toggles, analyserRef, onBeat }: {
   session: StudioSession
   toggles: OverlayToggles
+  analyserRef: React.MutableRefObject<AnalyserNode | null>
   onBeat?: () => void
 }) {
   const [floats, setFloats] = useState<Floating[]>([])
@@ -144,6 +146,13 @@ export default function Overlay({ session, toggles, onBeat }: {
               <div style={{ color: '#cbd5e1', fontSize: 15, marginTop: 2 }}>📍 {session.venue}</div>
             )}
           </div>
+        </Movable>
+      )}
+
+      {/* ── Logo TIPSON réactif (couleur/pulsation selon le son) ───────────── */}
+      {toggles.logo && (
+        <Movable storageKey={`tipson-pos-${session.id}-logo`} defaultPos={() => ({ x: Math.max(24, window.innerWidth / 2 - 38), y: 24 })}>
+          <ReactiveLogo analyserRef={analyserRef} size={76} />
         </Movable>
       )}
 

@@ -5,13 +5,14 @@ import { type AudioMode, type AudioDevice, type AudioSource, listInputDevices, c
 import Overlay from './Overlay'
 import Settings, { type OverlayToggles } from './Settings'
 
-const DEFAULT_TOGGLES: OverlayToggles = { dj: true, title: true, venue: true, messages: true, emojis: true, votes: true, requests: true, code: true }
+const DEFAULT_TOGGLES: OverlayToggles = { logo: true, dj: true, title: true, venue: true, messages: true, emojis: true, votes: true, requests: true, code: true }
 
 export default function Studio({ session, onExit }: { session: StudioSession; onExit: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const vizRef = useRef<Visualizer | null>(null)
   const ctxRef = useRef<AudioContext | null>(null)
   const srcRef = useRef<AudioSource | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
 
   const [mode, setMode] = useState<AudioMode>('mic')
   const [devices, setDevices] = useState<AudioDevice[]>([])
@@ -34,6 +35,11 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
     const canvas = canvasRef.current!
     const ctx = new AudioContext()
     ctxRef.current = ctx
+    // Analyseur partagé : alimente le logo réactif (niveau/rythme).
+    const analyser = ctx.createAnalyser()
+    analyser.fftSize = 256
+    analyser.smoothingTimeConstant = 0.8
+    analyserRef.current = analyser
     const resize = () => {
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
@@ -68,6 +74,7 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
         if (cancelled) { src.stop(); return }
         srcRef.current = src
         viz.connect(src.node)
+        try { if (analyserRef.current) src.node.connect(analyserRef.current) } catch {}
         if (mode === 'beat') src.setBpm?.(bpm)
         if (mode !== 'beat') listInputDevices().then(setDevices) // labels après permission
       } catch (e) {
@@ -111,7 +118,7 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
     <div className="studio" style={{ cursor: uiVisible ? 'default' : 'none' }}>
       <canvas ref={canvasRef} className="viz-canvas" />
 
-      <Overlay session={session} toggles={toggles} onBeat={() => { if (mode === 'beat') srcRef.current?.pulse?.(0.9) }} />
+      <Overlay session={session} toggles={toggles} analyserRef={analyserRef} onBeat={() => { if (mode === 'beat') srcRef.current?.pulse?.(0.9) }} />
 
       <div className="toolbar" style={{ opacity: uiVisible ? 1 : 0, pointerEvents: uiVisible ? 'auto' : 'none' }}>
         <button className="tool" onClick={nextPreset}>🎞️ Preset</button>
