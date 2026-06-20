@@ -17,6 +17,13 @@ export default function DesktopAuthPage() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
+  // cb = URL loopback fournie par l'app desktop (http://127.0.0.1:PORT/cb).
+  // Si absente, on retombe sur le deep-link tipson://.
+  function getCb(): string | null {
+    if (typeof window === 'undefined') return null
+    return new URLSearchParams(window.location.search).get('cb')
+  }
+
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getSession().then(({ data }) => {
@@ -29,16 +36,18 @@ export default function DesktopAuthPage() {
 
   function handoff(session: Session) {
     setStage('done')
-    window.location.href = `tipson://auth#access_token=${encodeURIComponent(session.access_token)}&refresh_token=${encodeURIComponent(session.refresh_token)}`
+    const frag = `#access_token=${encodeURIComponent(session.access_token)}&refresh_token=${encodeURIComponent(session.refresh_token)}`
+    const cb = getCb()
+    window.location.href = cb ? `${cb}${frag}` : `tipson://auth${frag}`
   }
 
   async function handleGoogle() {
     setError(''); setGoogleLoading(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/desktop-auth` },
-    })
+    // Préserve cb à travers le round-trip OAuth
+    const cb = getCb()
+    const redirectTo = `${window.location.origin}/desktop-auth${cb ? `?cb=${encodeURIComponent(cb)}` : ''}`
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
     if (error) { setError(error.message); setGoogleLoading(false) }
   }
 

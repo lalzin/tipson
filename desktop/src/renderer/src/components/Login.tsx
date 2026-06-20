@@ -20,9 +20,9 @@ export default function Login() {
 
   async function signInGoogle() {
     setError('')
-    // On délègue à la page de relais de tipson.online : login Google dans le
-    // navigateur, puis retour de la session à l'app via le deep-link tipson://.
-    await window.tipson.openExternal(`${API_BASE}/desktop-auth`)
+    // Loopback local : tipson.online renvoie la session à l'app via 127.0.0.1
+    // (fiable en dev comme en app installée).
+    await window.tipson.googleLogin(API_BASE)
   }
 
   return (

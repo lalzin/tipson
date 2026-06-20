@@ -22,9 +22,10 @@ export default function App() {
         return prev
       })
     })
-    // Tokens renvoyés par tipson.online (deep-link tipson://) → on ouvre la session
+    // Tokens renvoyés par tipson.online (loopback ou deep-link) → ouvre la session
     const off = window.tipson.onAuthTokens(async ({ access_token, refresh_token }) => {
-      await supabase.auth.setSession({ access_token, refresh_token })
+      const { error } = await supabase.auth.setSession({ access_token, refresh_token })
+      if (!error) setStage('code')
     })
     return () => { sub.subscription.unsubscribe(); off() }
   }, [])

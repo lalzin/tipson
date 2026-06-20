@@ -22,6 +22,19 @@ function DJAuth() {
   const [appleLoading, setAppleLoading] = useState(false)
   const [error, setError] = useState('')
   const [signupSuccess, setSignupSuccess] = useState(false)
+  const [code, setCode] = useState('')
+  const [verifying, setVerifying] = useState(false)
+  const [resent, setResent] = useState(false)
+
+  function humanizeAuthError(msg: string): string {
+    const m = msg.toLowerCase()
+    if (m.includes('already') || m.includes('registered')) return 'Un compte existe déjà avec cet email'
+    if (m.includes('rate limit') || m.includes('too many')) return 'Trop de tentatives. Réessayez dans quelques minutes.'
+    if (m.includes('sending') || m.includes('smtp') || m.includes('email')) return 'Envoi de l\'email impossible. Vérifiez l\'adresse ou réessayez plus tard.'
+    if (m.includes('password')) return 'Mot de passe invalide (min. 6 caractères).'
+    if (m.includes('signups not allowed') || m.includes('disabled')) return 'Les inscriptions sont désactivées pour le moment.'
+    return msg || 'Erreur lors de la création du compte'
+  }
 
   async function handleGoogle() {
     const supabase = createClient()
@@ -74,38 +87,80 @@ function DJAuth() {
         },
       })
       if (error) {
-        setError(error.message.includes('already') ? 'Un compte existe déjà avec cet email' : 'Erreur lors de la création du compte')
+        setError(humanizeAuthError(error.message))
         setLoading(false)
         return
       }
       if (data.session) {
         router.push('/dj/dashboard')
       } else {
+        // Compte créé, en attente de confirmation → saisie du code reçu par email
         setSignupSuccess(true)
         setLoading(false)
       }
     }
   }
 
+  // Validation du compte par code reçu par email
+  async function verifyCode(e: React.FormEvent) {
+    e.preventDefault()
+    const supabase = createClient()
+    setVerifying(true); setError('')
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: code.trim(),
+      type: 'signup',
+    })
+    if (error) {
+      setError(error.message.toLowerCase().includes('expired') ? 'Code expiré. Renvoyez-en un nouveau.' : 'Code invalide.')
+      setVerifying(false)
+      return
+    }
+    if (data.session) router.push('/dj/dashboard')
+    else { setError('Compte confirmé. Connectez-vous.'); setSignupSuccess(false); setMode('login'); setVerifying(false) }
+  }
+
+  async function resendCode() {
+    const supabase = createClient()
+    setError(''); setResent(false)
+    const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim() })
+    if (error) setError(humanizeAuthError(error.message))
+    else setResent(true)
+  }
+
   if (signupSuccess) {
     return (
       <main className="min-h-screen flex items-center justify-center px-6 bg-gradient-to-br from-gray-950 via-purple-950/20 to-gray-950">
-        <div className="w-full max-w-md text-center space-y-5">
-          <div className="w-16 h-16 rounded-3xl bg-green-500/15 border border-green-500/25 flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-8 h-8 text-green-400" />
+        <form onSubmit={verifyCode} className="w-full max-w-md text-center space-y-5">
+          <div className="w-16 h-16 rounded-3xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center mx-auto">
+            <Mail className="w-8 h-8 text-purple-400" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">Compte créé !</h2>
+            <h2 className="text-xl font-bold">Vérifiez votre email</h2>
             <p className="text-gray-400 text-sm mt-2 leading-relaxed">
-              Vérifiez vos emails pour confirmer votre adresse, puis connectez-vous.
-              <br />Votre accès organisateur sera ensuite validé par un administrateur.
+              Un code de validation a été envoyé à <strong className="text-white">{email}</strong>.
+              <br />Entrez-le pour activer votre compte.
             </p>
           </div>
-          <button onClick={() => { setSignupSuccess(false); setMode('login') }}
-            className="text-purple-400 text-sm hover:text-purple-300 transition">
-            ← Retour à la connexion
+          <input
+            type="text" inputMode="numeric" value={code}
+            onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="000000" autoFocus
+            className="w-full px-4 py-4 rounded-2xl bg-white/5 border border-white/10 text-white text-center text-2xl tracking-[0.4em] font-bold placeholder-gray-700 focus:outline-none focus:border-purple-500 transition"
+          />
+          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {resent && <p className="text-green-400 text-sm">Nouveau code envoyé ✓</p>}
+          <button type="submit" disabled={verifying || code.length < 6}
+            className="w-full py-4 rounded-2xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 font-semibold text-lg flex items-center justify-center gap-2 transition">
+            {verifying && <Loader2 className="w-5 h-5 animate-spin" />}
+            Valider mon compte
           </button>
-        </div>
+          <div className="flex items-center justify-center gap-4 text-sm">
+            <button type="button" onClick={resendCode} className="text-purple-400 hover:text-purple-300 transition">Renvoyer le code</button>
+            <span className="text-gray-700">·</span>
+            <button type="button" onClick={() => { setSignupSuccess(false); setMode('login'); setError('') }} className="text-gray-500 hover:text-gray-300 transition">Retour</button>
+          </div>
+        </form>
       </main>
     )
   }

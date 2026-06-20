@@ -8,6 +8,7 @@ const api = {
   toggleFullscreen: (): Promise<boolean> => ipcRenderer.invoke('toggle-fullscreen'),
   isFullscreen: (): Promise<boolean> => ipcRenderer.invoke('is-fullscreen'),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('open-external', url),
+  googleLogin: (apiBase: string): Promise<void> => ipcRenderer.invoke('google-login', apiBase),
   // Auth : tokens renvoyés par tipson.online via le deep-link tipson://
   onAuthTokens: (cb: (t: AuthTokens) => void) => {
     const listener = (_e: unknown, t: AuthTokens) => cb(t)
