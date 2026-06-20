@@ -3,10 +3,13 @@ import type { StudioSession } from '../lib/session'
 import type { AudioMode, AudioDevice } from '../visual/audio'
 
 export interface OverlayToggles {
+  dj: boolean
+  title: boolean
+  venue: boolean
   messages: boolean
-  track: boolean
   emojis: boolean
   votes: boolean
+  requests: boolean
   code: boolean
 }
 
@@ -89,11 +92,15 @@ export default function Settings(props: {
       </select>
 
       <h3>Éléments TIPSON</h3>
-      {Toggle('messages', 'Barre de messages')}
-      {Toggle('track', 'Nom de la soirée / track')}
+      <p className="muted" style={{ textAlign: 'left', marginTop: -4 }}>Chaque bloc est déplaçable à la souris sur l'écran.</p>
+      {Toggle('dj', 'Nom du DJ')}
+      {Toggle('title', 'Titre de la soirée')}
+      {Toggle('venue', 'Lieu')}
+      {Toggle('requests', 'Demandes (+ express)')}
+      {Toggle('messages', 'Messages (défilants + super)')}
       {Toggle('emojis', 'Emojis')}
       {Toggle('votes', 'Votes (+1)')}
-      {Toggle('code', 'Code soirée')}
+      {Toggle('code', 'QR + code soirée')}
     </div>
   )
 }

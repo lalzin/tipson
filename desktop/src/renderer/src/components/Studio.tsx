@@ -5,7 +5,7 @@ import { type AudioMode, type AudioDevice, type AudioSource, listInputDevices, c
 import Overlay from './Overlay'
 import Settings, { type OverlayToggles } from './Settings'
 
-const DEFAULT_TOGGLES: OverlayToggles = { messages: true, track: true, emojis: true, votes: true, code: true }
+const DEFAULT_TOGGLES: OverlayToggles = { dj: true, title: true, venue: true, messages: true, emojis: true, votes: true, requests: true, code: true }
 
 export default function Studio({ session, onExit }: { session: StudioSession; onExit: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -19,7 +19,12 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
   const [bpm, setBpm] = useState(128)
   const [presetName, setPresetName] = useState('')
   const [presets, setPresets] = useState<string[]>([])
-  const [toggles, setToggles] = useState<OverlayToggles>(DEFAULT_TOGGLES)
+  const togglesKey = `tipson-toggles-${session.id}`
+  const [toggles, setToggles] = useState<OverlayToggles>(() => {
+    try { const raw = localStorage.getItem(togglesKey); if (raw) return { ...DEFAULT_TOGGLES, ...JSON.parse(raw) } } catch {}
+    return DEFAULT_TOGGLES
+  })
+  useEffect(() => { try { localStorage.setItem(togglesKey, JSON.stringify(toggles)) } catch {} }, [togglesKey, toggles])
   const [showPanel, setShowPanel] = useState(true)
   const [controlsVisible, setControlsVisible] = useState(true)
   const [error, setError] = useState('')
