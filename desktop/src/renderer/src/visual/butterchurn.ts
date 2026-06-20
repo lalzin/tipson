@@ -19,8 +19,10 @@ export class Visualizer {
       height: canvas.height,
       pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
     })
-    this.presets = butterchurnPresets.getPresets()
-    this.names = Object.keys(this.presets)
+    // butterchurn-presets v2 expose getPresets() ; v3 exporte directement la map.
+    const lib: any = (butterchurnPresets as any)?.default ?? butterchurnPresets
+    this.presets = typeof lib?.getPresets === 'function' ? lib.getPresets() : lib
+    this.names = Object.keys(this.presets ?? {})
   }
 
   get presetNames(): string[] { return this.names }
@@ -34,6 +36,7 @@ export class Visualizer {
   }
 
   loadRandom(blendSeconds = 2.7) {
+    if (this.names.length === 0) return
     this.current = Math.floor(Math.random() * this.names.length)
     this.viz.loadPreset(this.presets[this.names[this.current]], blendSeconds)
   }
@@ -45,7 +48,7 @@ export class Visualizer {
   start() {
     const loop = () => {
       if (this.destroyed) return
-      this.viz.render()
+      try { this.viz.render() } catch { /* une frame ratée ne doit pas figer la boucle */ }
       this.raf = requestAnimationFrame(loop)
     }
     loop()

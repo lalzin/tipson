@@ -75,32 +75,47 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
 
   useEffect(() => { if (mode === 'beat') srcRef.current?.setBpm?.(bpm) }, [bpm, mode])
 
-  // Auto-masquage des contrôles (rendu "écran")
+  // Auto-masquage des contrôles : visibles tant que la souris bouge sur l'app,
+  // masqués après une période d'inactivité (rendu "écran" propre).
   useEffect(() => {
     let t: ReturnType<typeof setTimeout>
-    const reveal = () => { setControlsVisible(true); clearTimeout(t); t = setTimeout(() => setControlsVisible(false), 3000) }
+    const reveal = () => {
+      setControlsVisible(true)
+      clearTimeout(t)
+      t = setTimeout(() => setControlsVisible(false), 4000)
+    }
     reveal()
     window.addEventListener('mousemove', reveal)
-    return () => { clearTimeout(t); window.removeEventListener('mousemove', reveal) }
+    window.addEventListener('mousedown', reveal)
+    window.addEventListener('keydown', reveal)
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('mousemove', reveal)
+      window.removeEventListener('mousedown', reveal)
+      window.removeEventListener('keydown', reveal)
+    }
   }, [])
+
+  // Le panneau de réglages, une fois ouvert, force l'affichage des contrôles.
+  const uiVisible = controlsVisible || showPanel
 
   function applyPreset(name: string) { vizRef.current?.loadPreset(name); setPresetName(name) }
   function nextPreset() { vizRef.current?.next(); setPresetName(vizRef.current?.currentPresetName ?? '') }
 
   return (
-    <div className="studio" style={{ cursor: controlsVisible ? 'default' : 'none' }}>
+    <div className="studio" style={{ cursor: uiVisible ? 'default' : 'none' }}>
       <canvas ref={canvasRef} className="viz-canvas" />
 
       <Overlay session={session} toggles={toggles} onBeat={() => { if (mode === 'beat') srcRef.current?.pulse?.(0.9) }} />
 
-      <div className="toolbar" style={{ opacity: controlsVisible ? 1 : 0, pointerEvents: controlsVisible ? 'auto' : 'none' }}>
+      <div className="toolbar" style={{ opacity: uiVisible ? 1 : 0, pointerEvents: uiVisible ? 'auto' : 'none' }}>
         <button className="tool" onClick={nextPreset}>🎞️ Preset</button>
         <button className="tool" onClick={() => setShowPanel(p => !p)}>⚙️ Réglages</button>
         <button className="tool" onClick={() => window.tipson.toggleFullscreen()}>⛶ Plein écran</button>
         <button className="tool" onClick={onExit}>✕ Quitter</button>
       </div>
 
-      {showPanel && controlsVisible && (
+      {showPanel && (
         <Settings
           session={session}
           mode={mode} setMode={setMode}
