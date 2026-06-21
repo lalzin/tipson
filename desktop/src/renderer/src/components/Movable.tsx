@@ -88,10 +88,10 @@ export default function Movable({
           position: 'absolute', right: 0, bottom: 0, width: 22, height: 22,
           transform: `scale(${1 / scale})`, transformOrigin: 'bottom right',
           cursor: 'nwse-resize', borderRadius: '6px 0 6px 0',
-          background: hover ? 'rgba(168,85,247,.9)' : 'rgba(168,85,247,.35)',
-          border: '1px solid rgba(255,255,255,.5)',
+          background: 'rgba(168,85,247,.9)', border: '1px solid rgba(255,255,255,.5)',
           display: 'grid', placeItems: 'center', color: '#fff', fontSize: 12, lineHeight: 1,
-          transition: 'background .15s', boxShadow: '0 2px 8px rgba(0,0,0,.4)',
+          boxShadow: '0 2px 8px rgba(0,0,0,.4)',
+          opacity: hover ? 1 : 0, pointerEvents: hover ? 'auto' : 'none', transition: 'opacity .15s',
         }}
       >⤡</div>
     </div>
