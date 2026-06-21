@@ -33,7 +33,6 @@ export default function Overlay({ session, toggles, analyserRef, onBeat }: {
   const [superMsg, setSuperMsg] = useState<Msg | null>(null)
   const [reqFeed, setReqFeed] = useState<Req[]>([])
   const [reqFlash, setReqFlash] = useState<{ req: Req; k: number } | null>(null)
-  const [validFlash, setValidFlash] = useState<string | null>(null)
   const counter = useRef(0)
   const superTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -42,11 +41,13 @@ export default function Overlay({ session, toggles, analyserRef, onBeat }: {
   const c1 = session.display_color1 || '#a855f7'
   const c2 = session.display_color2 || '#ec4899'
 
+  // On n'affiche QUE les demandes validées par le DJ (approved) et jouées (played) —
+  // jamais les demandes entrantes / en attente de validation.
   const ingestRequest = useCallback((r: Req, fresh: boolean) => {
-    if (r.status !== 'paid' && r.status !== 'approved') return
+    if (r.status !== 'approved' && r.status !== 'played') return
     setReqFeed(prev => [r, ...prev.filter(x => x.id !== r.id)].slice(0, 6))
-    // Flash animé uniquement à la première apparition "validée" de la demande.
-    if (fresh && !seenReq.current.has(r.id)) {
+    // Flash animé uniquement à la première validation de la demande.
+    if (fresh && r.status === 'approved' && !seenReq.current.has(r.id)) {
       seenReq.current.add(r.id)
       setReqFlash({ req: r, k: counter.current++ })
       onBeat?.()
@@ -55,13 +56,13 @@ export default function Overlay({ session, toggles, analyserRef, onBeat }: {
     }
   }, [onBeat])
 
-  // Charge la file existante au démarrage (lecture publique des requests).
+  // Charge la file déjà validée au démarrage (lecture publique des requests).
   useEffect(() => {
     let alive = true
     supabase.from('requests')
       .select('id,song_name,artist,album_image,customer_name,request_type,status')
       .eq('session_id', session.id)
-      .in('status', ['paid', 'approved'])
+      .in('status', ['approved', 'played'])
       .order('created_at', { ascending: false })
       .limit(6)
       .then(({ data }) => {
@@ -105,11 +106,7 @@ export default function Overlay({ session, toggles, analyserRef, onBeat }: {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests', filter: `session_id=eq.${id}` },
         ({ new: r }: any) => {
           ingestRequest(r as Req, true)
-          if (r.status === 'approved') {
-            setValidFlash(`${r.song_name} · ${r.artist}`)
-            setTimeout(() => setValidFlash(null), 2600)
-          }
-          if (r.status === 'played' || r.status === 'rejected') {
+          if (r.status === 'rejected') {
             setReqFeed(prev => prev.filter(x => x.id !== r.id))
           }
         })
@@ -213,7 +210,7 @@ export default function Overlay({ session, toggles, analyserRef, onBeat }: {
           textAlign: 'center', animation: 'reqIn 5s cubic-bezier(.2,.8,.2,1) forwards', pointerEvents: 'none',
         }}>
           <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: '.25em', color: c1, marginBottom: 6 }}>
-            {reqFlash.req.request_type === 'priority' ? '⚡ DEMANDE EXPRESS' : '🎵 NOUVELLE DEMANDE'}
+            {reqFlash.req.request_type === 'priority' ? '⚡ EXPRESS VALIDÉ' : '🎶 SON VALIDÉ'}
           </div>
           <div style={{ fontSize: 'clamp(28px,4.5vw,56px)', fontWeight: 900, color: '#fff', textShadow: `0 0 26px ${c1}, 0 4px 22px rgba(0,0,0,.85)` }}>
             {reqFlash.req.song_name}
@@ -221,14 +218,6 @@ export default function Overlay({ session, toggles, analyserRef, onBeat }: {
           <div style={{ fontSize: 20, color: '#cbd5e1', marginTop: 4 }}>
             {reqFlash.req.artist}{reqFlash.req.customer_name ? ` · ${reqFlash.req.customer_name}` : ''}
           </div>
-        </div>
-      )}
-
-      {/* Son validé */}
-      {validFlash && (
-        <div style={{ position: 'absolute', top: '12%', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', textShadow: '0 2px 16px rgba(0,0,0,.8)', pointerEvents: 'none' }}>
-          <div style={{ color: c1, fontWeight: 800, fontSize: 13, letterSpacing: '.2em' }}>🎶 NOUVEAU SON VALIDÉ</div>
-          <div style={{ fontWeight: 800, fontSize: 30, marginTop: 4 }}>{validFlash}</div>
         </div>
       )}
 
@@ -255,19 +244,24 @@ export default function Overlay({ session, toggles, analyserRef, onBeat }: {
         <span key={v.id} style={{ position: 'absolute', bottom: '12vh', left: `${v.left}%`, color: c1, fontWeight: 900, fontSize: 40, textShadow: '0 0 20px rgba(0,0,0,.6)', animation: 'votePop 1.6s ease-out forwards' }}>+1 🔥</span>
       ))}
 
-      {/* Bandeau de messages défilant (ticker) */}
-      {toggles.messages && messages.length > 0 && (
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 56, overflow: 'hidden', background: 'linear-gradient(to top, rgba(0,0,0,.7), transparent)', maskImage: 'linear-gradient(to right, transparent, #000 6%, #000 94%, transparent)' }}>
-          <div key={messages.length} style={{ position: 'absolute', bottom: 14, whiteSpace: 'nowrap', display: 'inline-flex', animation: `ticker ${Math.max(18, messages.length * 7)}s linear infinite` }}>
-            {[...messages, ...messages].map((m, i) => (
-              <span key={`${m.id}-${i}`} style={{ fontSize: 18, fontWeight: 500, color: '#fff', textShadow: '0 2px 10px rgba(0,0,0,.85)', paddingRight: 56 }}>
-                {m.author_name && <span style={{ color: c1, fontWeight: 700 }}>{m.author_name} </span>}
-                {m.text}
-              </span>
-            ))}
+      {/* Bandeau de messages défilant (ticker) — toujours visible, avec invite par défaut */}
+      {toggles.messages && (() => {
+        const tickerMsgs: Msg[] = messages.length
+          ? messages
+          : [{ id: 'placeholder', text: 'Envoyez vos messages et vos ❤️ depuis l\'application TIPSON', author_name: null, is_super: false }]
+        return (
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 56, overflow: 'hidden', background: 'linear-gradient(to top, rgba(0,0,0,.7), transparent)', maskImage: 'linear-gradient(to right, transparent, #000 6%, #000 94%, transparent)' }}>
+            <div key={tickerMsgs.length} style={{ position: 'absolute', bottom: 14, whiteSpace: 'nowrap', display: 'inline-flex', animation: `ticker ${Math.max(18, tickerMsgs.length * 7)}s linear infinite` }}>
+              {[...tickerMsgs, ...tickerMsgs].map((m, i) => (
+                <span key={`${m.id}-${i}`} style={{ fontSize: 18, fontWeight: 500, color: '#fff', textShadow: '0 2px 10px rgba(0,0,0,.85)', paddingRight: 56 }}>
+                  {m.author_name && <span style={{ color: c1, fontWeight: 700 }}>{m.author_name} </span>}
+                  {m.text}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       <style>{`
         @keyframes floatUp { 0%{transform:translateY(0) scale(.6);opacity:0} 12%{opacity:1} 100%{transform:translateY(-82vh) scale(1.2);opacity:0} }
