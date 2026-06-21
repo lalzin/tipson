@@ -29,6 +29,9 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
   const [showPanel, setShowPanel] = useState(true)
   const [controlsVisible, setControlsVisible] = useState(true)
   const [error, setError] = useState('')
+  const [strobeOn, setStrobeOn] = useState(false)   // mode continu (case à cocher)
+  const [strobeHeld, setStrobeHeld] = useState(false) // momentané (touche S maintenue)
+  const [strobeHz, setStrobeHz] = useState(10)        // vitesse (flashs/seconde)
 
   // Init du visualiseur (canvas plein écran)
   useEffect(() => {
@@ -108,6 +111,19 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
     }
   }, [])
 
+  // Stroboscope momentané : maintenir S l'active, le relâcher l'arrête.
+  useEffect(() => {
+    const typing = (t: EventTarget | null) => t instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)
+    const down = (e: KeyboardEvent) => { if (!e.repeat && e.key.toLowerCase() === 's' && !typing(e.target)) setStrobeHeld(true) }
+    const up = (e: KeyboardEvent) => { if (e.key.toLowerCase() === 's') setStrobeHeld(false) }
+    const blur = () => setStrobeHeld(false)
+    window.addEventListener('keydown', down)
+    window.addEventListener('keyup', up)
+    window.addEventListener('blur', blur)
+    return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('blur', blur) }
+  }, [])
+  const strobeActive = strobeOn || strobeHeld
+
   // Le panneau de réglages, une fois ouvert, force l'affichage des contrôles.
   const uiVisible = controlsVisible || showPanel
 
@@ -119,6 +135,15 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
       <canvas ref={canvasRef} className="viz-canvas" />
 
       <Overlay session={session} toggles={toggles} analyserRef={analyserRef} onBeat={() => { if (mode === 'beat') srcRef.current?.pulse?.(0.9) }} />
+
+      {/* Stroboscope plein écran */}
+      {strobeActive && (
+        <div style={{
+          position: 'absolute', inset: 0, background: '#fff', pointerEvents: 'none', zIndex: 5,
+          animation: `strobeFlash ${(1 / Math.max(1, strobeHz)).toFixed(3)}s linear infinite`,
+        }} />
+      )}
+      <style>{`@keyframes strobeFlash { 0%,48%{opacity:1} 50%,100%{opacity:0} }`}</style>
 
       <div className="toolbar" style={{ opacity: uiVisible ? 1 : 0, pointerEvents: uiVisible ? 'auto' : 'none' }}>
         <button className="tool" onClick={nextPreset}>🎞️ Preset</button>
@@ -135,6 +160,7 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
           bpm={bpm} setBpm={setBpm}
           presets={presets} presetName={presetName} applyPreset={applyPreset}
           toggles={toggles} setToggles={setToggles}
+          strobeOn={strobeOn} setStrobeOn={setStrobeOn} strobeHz={strobeHz} setStrobeHz={setStrobeHz}
           error={error}
         />
       )}

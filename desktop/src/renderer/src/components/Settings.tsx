@@ -21,9 +21,11 @@ export default function Settings(props: {
   bpm: number; setBpm: (n: number) => void
   presets: string[]; presetName: string; applyPreset: (n: string) => void
   toggles: OverlayToggles; setToggles: (t: OverlayToggles) => void
+  strobeOn: boolean; setStrobeOn: (b: boolean) => void
+  strobeHz: number; setStrobeHz: (n: number) => void
   error: string
 }) {
-  const { mode, setMode, devices, deviceId, setDeviceId, bpm, setBpm, presets, presetName, applyPreset, toggles, setToggles, error } = props
+  const { mode, setMode, devices, deviceId, setDeviceId, bpm, setBpm, presets, presetName, applyPreset, toggles, setToggles, strobeOn, setStrobeOn, strobeHz, setStrobeHz, error } = props
   const [prolink, setProlink] = useState<{ connected: boolean; reason?: string }>({ connected: false })
 
   useEffect(() => {
@@ -85,6 +87,15 @@ export default function Settings(props: {
             <button className="btn" onClick={linkPlatine}>Activer le link platine</button>
             {prolink.reason && <p className="muted" style={{ textAlign: 'left', marginTop: 8 }}>{prolink.reason}</p>}
           </>}
+
+      <h3>Stroboscope</h3>
+      <label className="toggle">
+        <span>Activer (continu)</span>
+        <input type="checkbox" checked={strobeOn} onChange={e => setStrobeOn(e.target.checked)} />
+      </label>
+      <label>Vitesse · {strobeHz} flashs/s</label>
+      <input type="range" min={1} max={20} value={strobeHz} onChange={e => setStrobeHz(Number(e.target.value))} style={{ width: '100%' }} />
+      <p className="muted" style={{ textAlign: 'left', marginTop: 4 }}>Astuce : maintenez la touche <b>S</b> pour un strobe momentané (s'arrête au relâchement).</p>
 
       <h3>Visualisation</h3>
       <label>Preset Milkdrop</label>
