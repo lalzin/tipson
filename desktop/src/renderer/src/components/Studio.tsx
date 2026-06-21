@@ -117,14 +117,14 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
       t = setTimeout(() => setControlsVisible(false), 4000)
     }
     reveal()
+    // Seule la souris révèle les contrôles : les raccourcis clavier (live)
+    // ne doivent pas faire réapparaître le curseur ni les menus.
     window.addEventListener('mousemove', reveal)
     window.addEventListener('mousedown', reveal)
-    window.addEventListener('keydown', reveal)
     return () => {
       clearTimeout(t)
       window.removeEventListener('mousemove', reveal)
       window.removeEventListener('mousedown', reveal)
-      window.removeEventListener('keydown', reveal)
     }
   }, [])
 
