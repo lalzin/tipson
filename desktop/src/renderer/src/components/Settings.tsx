@@ -28,9 +28,10 @@ export default function Settings(props: {
   midiOn: boolean; midiInputs: string[]; enableMidi: () => void
   midiMap: MidiMap; learning: string | null; startLearn: (id: string | null) => void; clearBinding: (id: string) => void
   media: MediaItem[]; mediaIdx: number; addMedia: (f: FileList | null) => void; removeMedia: (id: string) => void; selectMedia: (i: number) => void
+  mediaOpacity: number; setMediaOpacity: (n: number) => void
   error: string
 }) {
-  const { mode, setMode, devices, deviceId, setDeviceId, bpm, setBpm, presets, presetName, applyPreset, toggles, setToggles, strobeOn, setStrobeOn, strobeHz, setStrobeHz, midiOn, midiInputs, enableMidi, midiMap, learning, startLearn, clearBinding, media, mediaIdx, addMedia, removeMedia, selectMedia, error } = props
+  const { mode, setMode, devices, deviceId, setDeviceId, bpm, setBpm, presets, presetName, applyPreset, toggles, setToggles, strobeOn, setStrobeOn, strobeHz, setStrobeHz, midiOn, midiInputs, enableMidi, midiMap, learning, startLearn, clearBinding, media, mediaIdx, addMedia, removeMedia, selectMedia, mediaOpacity, setMediaOpacity, error } = props
   const [prolink, setProlink] = useState<{ connected: boolean; reason?: string }>({ connected: false })
 
   useEffect(() => {
@@ -128,6 +129,9 @@ export default function Settings(props: {
               </div>
             ))}
           </div>
+          <label style={{ marginTop: 10 }}>Opacité · {Math.round(mediaOpacity * 100)}%</label>
+          <input type="range" min={0} max={100} value={Math.round(mediaOpacity * 100)} onChange={e => setMediaOpacity(Number(e.target.value) / 100)} style={{ width: '100%' }} />
+          <p className="muted" style={{ textAlign: 'left', marginTop: 4 }}>Baissez l'opacité pour laisser transparaître le visualiseur derrière (mappable sur un knob MIDI).</p>
           <p className="muted" style={{ textAlign: 'left', marginTop: 6 }}>Touches : <b>M</b> afficher/masquer · <b>N</b> suivant · <b>Maj+N</b> précédent.</p>
         </>
       )}

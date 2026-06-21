@@ -48,6 +48,7 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
   const [media, setMedia] = useState<MediaItem[]>([])
   const [mediaIdx, setMediaIdx] = useState(0)
   const [mediaShown, setMediaShown] = useState(false)
+  const [mediaOpacity, setMediaOpacity] = useState(1) // 0..1 — laisse voir le visuel derrière
 
   // Init du visualiseur (canvas plein écran)
   useEffect(() => {
@@ -203,6 +204,9 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
       if (action === 'strobe-hold') {
         if (m.kind === 'noteon') setStrobeHeld(true)
         else if (m.kind === 'noteoff') setStrobeHeld(false)
+      } else if (action === 'media-opacity' && m.kind === 'cc') {
+        setMediaOpacity(m.value / 127) // knob continu
+        setMediaShown(true)
       } else if (m.kind === 'noteon' || (m.kind === 'cc' && m.value >= 64)) {
         runAction(action)
       }
@@ -246,10 +250,10 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
       {mediaShown && media[mediaIdx] && (
         media[mediaIdx].type === 'video' ? (
           <video key={media[mediaIdx].id} src={media[mediaIdx].url} autoPlay loop muted playsInline
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', opacity: mediaOpacity }} />
         ) : (
           <img key={media[mediaIdx].id} src={media[mediaIdx].url} alt=""
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', opacity: mediaOpacity }} />
         )
       )}
 
@@ -290,6 +294,7 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
           midiOn={midiOn} midiInputs={midiInputs} enableMidi={enableMidi}
           midiMap={midiMap} learning={learning} startLearn={setLearning} clearBinding={clearBinding}
           media={media} mediaIdx={mediaIdx} addMedia={addMedia} removeMedia={removeMedia} selectMedia={(i) => { setMediaIdx(i); setMediaShown(true) }}
+          mediaOpacity={mediaOpacity} setMediaOpacity={setMediaOpacity}
           error={error}
         />
       )}

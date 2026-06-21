@@ -19,6 +19,7 @@ export const MIDI_ACTIONS: { id: string; label: string }[] = [
   { id: 'media-toggle', label: 'Média on/off' },
   { id: 'media-next', label: 'Média suivant' },
   { id: 'media-prev', label: 'Média précédent' },
+  { id: 'media-opacity', label: 'Opacité média (knob CC)' },
 ]
 
 export function bindingLabel(b?: MidiBinding): string {
