@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { StudioSession } from '../lib/session'
 import type { AudioMode, AudioDevice } from '../visual/audio'
+import { MIDI_ACTIONS, bindingLabel, type MidiMap } from '../lib/midi'
 
 export interface OverlayToggles {
   logo: boolean
@@ -23,9 +24,11 @@ export default function Settings(props: {
   toggles: OverlayToggles; setToggles: (t: OverlayToggles) => void
   strobeOn: boolean; setStrobeOn: (b: boolean) => void
   strobeHz: number; setStrobeHz: (n: number) => void
+  midiOn: boolean; midiInputs: string[]; enableMidi: () => void
+  midiMap: MidiMap; learning: string | null; startLearn: (id: string | null) => void; clearBinding: (id: string) => void
   error: string
 }) {
-  const { mode, setMode, devices, deviceId, setDeviceId, bpm, setBpm, presets, presetName, applyPreset, toggles, setToggles, strobeOn, setStrobeOn, strobeHz, setStrobeHz, error } = props
+  const { mode, setMode, devices, deviceId, setDeviceId, bpm, setBpm, presets, presetName, applyPreset, toggles, setToggles, strobeOn, setStrobeOn, strobeHz, setStrobeHz, midiOn, midiInputs, enableMidi, midiMap, learning, startLearn, clearBinding, error } = props
   const [prolink, setProlink] = useState<{ connected: boolean; reason?: string }>({ connected: false })
 
   useEffect(() => {
@@ -98,10 +101,35 @@ export default function Settings(props: {
       <p className="muted" style={{ textAlign: 'left', marginTop: 4 }}>Astuce : maintenez la touche <b>S</b> pour un strobe momentané (s'arrête au relâchement).</p>
 
       <h3>Visualisation</h3>
-      <label>Preset Milkdrop</label>
+      <label>Preset Milkdrop <span className="muted">· touche P = suivant</span></label>
       <select className="field" value={presetName} onChange={e => applyPreset(e.target.value)}>
         {presets.map(p => <option key={p} value={p}>{p}</option>)}
       </select>
+
+      <h3>Mapping MIDI (live)</h3>
+      {!midiOn ? (
+        <button className="btn" onClick={enableMidi}>Activer le contrôle MIDI</button>
+      ) : (
+        <>
+          <p className="muted" style={{ textAlign: 'left', marginTop: -4 }}>
+            {midiInputs.length ? `Connecté : ${midiInputs.join(', ')}` : 'Aucun contrôleur détecté — branchez-le puis réactivez.'}
+          </p>
+          {MIDI_ACTIONS.map(a => (
+            <div key={a.id} className="row" style={{ justifyContent: 'space-between', gap: 8, margin: '6px 0' }}>
+              <span style={{ flex: 1, textAlign: 'left', fontSize: 13 }}>{a.label}</span>
+              <span className="muted" style={{ margin: 0, fontSize: 12, minWidth: 96, textAlign: 'right' }}>
+                {learning === a.id ? '⌛ appuyez…' : bindingLabel(midiMap[a.id])}
+              </span>
+              <button className="tool" style={{ padding: '4px 8px' }} onClick={() => startLearn(learning === a.id ? null : a.id)}>
+                {learning === a.id ? 'Annuler' : 'Apprendre'}
+              </button>
+              {midiMap[a.id] && learning !== a.id && (
+                <button className="tool" style={{ padding: '4px 8px' }} onClick={() => clearBinding(a.id)}>✕</button>
+              )}
+            </div>
+          ))}
+        </>
+      )}
 
       <h3>Éléments TIPSON</h3>
       <p className="muted" style={{ textAlign: 'left', marginTop: -4 }}>Chaque bloc est déplaçable à la souris sur l'écran.</p>

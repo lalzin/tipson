@@ -4,6 +4,9 @@ import { Visualizer } from '../visual/butterchurn'
 import { type AudioMode, type AudioDevice, type AudioSource, listInputDevices, createInputSource, createBeatSource } from '../visual/audio'
 import Overlay from './Overlay'
 import Settings, { type OverlayToggles } from './Settings'
+import { MidiManager, matches, type MidiMap, type MidiMessage } from '../lib/midi'
+
+const MIDI_MAP_KEY = 'tipson-midi-map'
 
 const DEFAULT_TOGGLES: OverlayToggles = { logo: true, dj: true, title: true, venue: true, messages: true, emojis: true, votes: true, requests: true, code: true }
 
@@ -32,6 +35,13 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
   const [strobeOn, setStrobeOn] = useState(false)   // mode continu (case à cocher)
   const [strobeHeld, setStrobeHeld] = useState(false) // momentané (touche S maintenue)
   const [strobeHz, setStrobeHz] = useState(10)        // vitesse (flashs/seconde)
+  const [midiOn, setMidiOn] = useState(false)
+  const [midiInputs, setMidiInputs] = useState<string[]>([])
+  const [learning, setLearning] = useState<string | null>(null)
+  const [midiMap, setMidiMap] = useState<MidiMap>(() => {
+    try { const raw = localStorage.getItem(MIDI_MAP_KEY); if (raw) return JSON.parse(raw) } catch {}
+    return {}
+  })
 
   // Init du visualiseur (canvas plein écran)
   useEffect(() => {
@@ -129,6 +139,67 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
 
   function applyPreset(name: string) { vizRef.current?.loadPreset(name); setPresetName(name) }
   function nextPreset() { vizRef.current?.next(); setPresetName(vizRef.current?.currentPresetName ?? '') }
+  function prevPreset() { vizRef.current?.prev(); setPresetName(vizRef.current?.currentPresetName ?? '') }
+  function randomPreset() { vizRef.current?.loadRandom(); setPresetName(vizRef.current?.currentPresetName ?? '') }
+
+  // ── Pilotage live : raccourcis clavier + mapping MIDI ───────────────────────
+  useEffect(() => { try { localStorage.setItem(MIDI_MAP_KEY, JSON.stringify(midiMap)) } catch {} }, [midiMap])
+
+  // Action discrète (déclenchée par P, un pad MIDI, etc.)
+  function runAction(id: string) {
+    if (id === 'preset-next') nextPreset()
+    else if (id === 'preset-prev') prevPreset()
+    else if (id === 'preset-random') randomPreset()
+    else if (id === 'strobe-toggle') setStrobeOn(v => !v)
+  }
+
+  // Callback MIDI maintenu à jour à chaque rendu (closures fraîches), appelé via
+  // un manager créé une seule fois.
+  const midiCbRef = useRef<(m: MidiMessage) => void>(() => {})
+  midiCbRef.current = (m: MidiMessage) => {
+    if (learning) {
+      const binding = { kind: m.kind === 'cc' ? 'cc' as const : 'note' as const, data1: m.data1, channel: m.channel }
+      setMidiMap(prev => ({ ...prev, [learning]: binding }))
+      setLearning(null)
+      return
+    }
+    for (const action of Object.keys(midiMap)) {
+      const b = midiMap[action]
+      if (!b || !matches(b, m)) continue
+      if (action === 'strobe-hold') {
+        if (m.kind === 'noteon') setStrobeHeld(true)
+        else if (m.kind === 'noteoff') setStrobeHeld(false)
+      } else if (m.kind === 'noteon' || (m.kind === 'cc' && m.value >= 64)) {
+        runAction(action)
+      }
+    }
+  }
+
+  const midiRef = useRef<MidiManager | null>(null)
+  useEffect(() => {
+    const mgr = new MidiManager(m => midiCbRef.current(m))
+    midiRef.current = mgr
+    return () => mgr.destroy()
+  }, [])
+  async function enableMidi() {
+    const ok = await midiRef.current?.enable()
+    setMidiOn(!!ok)
+    setMidiInputs(midiRef.current?.inputs ?? [])
+  }
+  function clearBinding(action: string) { setMidiMap(prev => ({ ...prev, [action]: undefined })) }
+
+  // Raccourcis clavier (P = preset suivant). Réfs pour des closures fraîches.
+  const actionRef = useRef(runAction); actionRef.current = runAction
+  useEffect(() => {
+    const typing = (t: EventTarget | null) => t instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat || typing(e.target)) return
+      const k = e.key.toLowerCase()
+      if (k === 'p') actionRef.current('preset-next')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   return (
     <div className="studio" style={{ cursor: uiVisible ? 'default' : 'none' }}>
@@ -161,6 +232,8 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
           presets={presets} presetName={presetName} applyPreset={applyPreset}
           toggles={toggles} setToggles={setToggles}
           strobeOn={strobeOn} setStrobeOn={setStrobeOn} strobeHz={strobeHz} setStrobeHz={setStrobeHz}
+          midiOn={midiOn} midiInputs={midiInputs} enableMidi={enableMidi}
+          midiMap={midiMap} learning={learning} startLearn={setLearning} clearBinding={clearBinding}
           error={error}
         />
       )}

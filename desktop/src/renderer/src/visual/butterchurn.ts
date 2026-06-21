@@ -41,7 +41,8 @@ export class Visualizer {
     this.viz.loadPreset(this.presets[this.names[this.current]], blendSeconds)
   }
 
-  next(blend = 2.7) { this.current = (this.current + 1) % this.names.length; this.viz.loadPreset(this.presets[this.names[this.current]], blend) }
+  next(blend = 2.7) { if (this.names.length === 0) return; this.current = (this.current + 1) % this.names.length; this.viz.loadPreset(this.presets[this.names[this.current]], blend) }
+  prev(blend = 2.7) { if (this.names.length === 0) return; this.current = (this.current - 1 + this.names.length) % this.names.length; this.viz.loadPreset(this.presets[this.names[this.current]], blend) }
 
   setSize(w: number, h: number) { this.viz.setRendererSize(w, h) }
 
