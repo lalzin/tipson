@@ -15,6 +15,10 @@ export const MIDI_ACTIONS: { id: string; label: string }[] = [
   { id: 'preset-random', label: 'Preset aléatoire' },
   { id: 'strobe-hold', label: 'Stroboscope (maintenu)' },
   { id: 'strobe-toggle', label: 'Stroboscope on/off' },
+  { id: 'blackout', label: 'Blackout on/off' },
+  { id: 'media-toggle', label: 'Média on/off' },
+  { id: 'media-next', label: 'Média suivant' },
+  { id: 'media-prev', label: 'Média précédent' },
 ]
 
 export function bindingLabel(b?: MidiBinding): string {

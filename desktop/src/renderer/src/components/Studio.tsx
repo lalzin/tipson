@@ -8,6 +8,8 @@ import { MidiManager, matches, type MidiMap, type MidiMessage } from '../lib/mid
 
 const MIDI_MAP_KEY = 'tipson-midi-map'
 
+export interface MediaItem { id: string; url: string; type: 'image' | 'video'; name: string }
+
 const DEFAULT_TOGGLES: OverlayToggles = { logo: true, dj: true, title: true, venue: true, messages: true, emojis: true, votes: true, requests: true, code: true }
 
 export default function Studio({ session, onExit }: { session: StudioSession; onExit: () => void }) {
@@ -42,6 +44,10 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
     try { const raw = localStorage.getItem(MIDI_MAP_KEY); if (raw) return JSON.parse(raw) } catch {}
     return {}
   })
+  const [blackout, setBlackout] = useState(false)
+  const [media, setMedia] = useState<MediaItem[]>([])
+  const [mediaIdx, setMediaIdx] = useState(0)
+  const [mediaShown, setMediaShown] = useState(false)
 
   // Init du visualiseur (canvas plein écran)
   useEffect(() => {
@@ -145,12 +151,40 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
   // ── Pilotage live : raccourcis clavier + mapping MIDI ───────────────────────
   useEffect(() => { try { localStorage.setItem(MIDI_MAP_KEY, JSON.stringify(midiMap)) } catch {} }, [midiMap])
 
+  // ── Média (image / vidéo) intégré au visuel ─────────────────────────────────
+  function addMedia(files: FileList | null) {
+    if (!files) return
+    const items: MediaItem[] = []
+    for (const f of Array.from(files)) {
+      const type = f.type.startsWith('video') ? 'video' : 'image'
+      items.push({ id: `${Date.now()}-${f.name}`, url: URL.createObjectURL(f), type, name: f.name })
+    }
+    if (items.length) { setMedia(prev => [...prev, ...items]); setMediaShown(true) }
+  }
+  function removeMedia(id: string) {
+    setMedia(prev => {
+      const it = prev.find(m => m.id === id)
+      if (it) URL.revokeObjectURL(it.url)
+      return prev.filter(m => m.id !== id)
+    })
+  }
+  function stepMedia(dir: 1 | -1) {
+    setMedia(cur => {
+      if (cur.length) { setMediaShown(true); setMediaIdx(i => (i + dir + cur.length) % cur.length) }
+      return cur
+    })
+  }
+
   // Action discrète (déclenchée par P, un pad MIDI, etc.)
   function runAction(id: string) {
     if (id === 'preset-next') nextPreset()
     else if (id === 'preset-prev') prevPreset()
     else if (id === 'preset-random') randomPreset()
     else if (id === 'strobe-toggle') setStrobeOn(v => !v)
+    else if (id === 'blackout') setBlackout(v => !v)
+    else if (id === 'media-toggle') setMediaShown(v => !v)
+    else if (id === 'media-next') stepMedia(1)
+    else if (id === 'media-prev') stepMedia(-1)
   }
 
   // Callback MIDI maintenu à jour à chaque rendu (closures fraîches), appelé via
@@ -196,6 +230,9 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
       if (e.repeat || typing(e.target)) return
       const k = e.key.toLowerCase()
       if (k === 'p') actionRef.current('preset-next')
+      else if (k === 'b') actionRef.current('blackout')
+      else if (k === 'm') actionRef.current('media-toggle')
+      else if (k === 'n') actionRef.current(e.shiftKey ? 'media-prev' : 'media-next')
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -204,6 +241,17 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
   return (
     <div className="studio" style={{ cursor: uiVisible ? 'default' : 'none' }}>
       <canvas ref={canvasRef} className="viz-canvas" />
+
+      {/* Couche média (image / vidéo) — au-dessus du visualiseur, sous l'overlay */}
+      {mediaShown && media[mediaIdx] && (
+        media[mediaIdx].type === 'video' ? (
+          <video key={media[mediaIdx].id} src={media[mediaIdx].url} autoPlay loop muted playsInline
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+        ) : (
+          <img key={media[mediaIdx].id} src={media[mediaIdx].url} alt=""
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+        )
+      )}
 
       <Overlay session={session} toggles={toggles} analyserRef={analyserRef} onBeat={() => { if (mode === 'beat') srcRef.current?.pulse?.(0.9) }} />
 
@@ -216,8 +264,15 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
       )}
       <style>{`@keyframes strobeFlash { 0%,48%{opacity:1} 50%,100%{opacity:0} }`}</style>
 
+      {/* Blackout (au-dessus de tout, sous les contrôles) */}
+      {blackout && <div style={{ position: 'absolute', inset: 0, background: '#000', zIndex: 40, pointerEvents: 'none' }} />}
+
       <div className="toolbar" style={{ opacity: uiVisible ? 1 : 0, pointerEvents: uiVisible ? 'auto' : 'none' }}>
         <button className="tool" onClick={nextPreset}>🎞️ Preset</button>
+        {media.length > 0 && (
+          <button className="tool" style={{ background: mediaShown ? '#a855f7' : undefined }} onClick={() => setMediaShown(v => !v)}>🖼️ Média</button>
+        )}
+        <button className="tool" style={{ background: blackout ? '#a855f7' : undefined }} onClick={() => setBlackout(v => !v)}>⬛ Blackout</button>
         <button className="tool" onClick={() => setShowPanel(p => !p)}>⚙️ Réglages</button>
         <button className="tool" onClick={() => window.tipson.toggleFullscreen()}>⛶ Plein écran</button>
         <button className="tool" onClick={onExit}>✕ Quitter</button>
@@ -234,6 +289,7 @@ export default function Studio({ session, onExit }: { session: StudioSession; on
           strobeOn={strobeOn} setStrobeOn={setStrobeOn} strobeHz={strobeHz} setStrobeHz={setStrobeHz}
           midiOn={midiOn} midiInputs={midiInputs} enableMidi={enableMidi}
           midiMap={midiMap} learning={learning} startLearn={setLearning} clearBinding={clearBinding}
+          media={media} mediaIdx={mediaIdx} addMedia={addMedia} removeMedia={removeMedia} selectMedia={(i) => { setMediaIdx(i); setMediaShown(true) }}
           error={error}
         />
       )}

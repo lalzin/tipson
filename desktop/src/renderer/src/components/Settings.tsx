@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { StudioSession } from '../lib/session'
 import type { AudioMode, AudioDevice } from '../visual/audio'
 import { MIDI_ACTIONS, bindingLabel, type MidiMap } from '../lib/midi'
+import type { MediaItem } from './Studio'
 
 export interface OverlayToggles {
   logo: boolean
@@ -26,9 +27,10 @@ export default function Settings(props: {
   strobeHz: number; setStrobeHz: (n: number) => void
   midiOn: boolean; midiInputs: string[]; enableMidi: () => void
   midiMap: MidiMap; learning: string | null; startLearn: (id: string | null) => void; clearBinding: (id: string) => void
+  media: MediaItem[]; mediaIdx: number; addMedia: (f: FileList | null) => void; removeMedia: (id: string) => void; selectMedia: (i: number) => void
   error: string
 }) {
-  const { mode, setMode, devices, deviceId, setDeviceId, bpm, setBpm, presets, presetName, applyPreset, toggles, setToggles, strobeOn, setStrobeOn, strobeHz, setStrobeHz, midiOn, midiInputs, enableMidi, midiMap, learning, startLearn, clearBinding, error } = props
+  const { mode, setMode, devices, deviceId, setDeviceId, bpm, setBpm, presets, presetName, applyPreset, toggles, setToggles, strobeOn, setStrobeOn, strobeHz, setStrobeHz, midiOn, midiInputs, enableMidi, midiMap, learning, startLearn, clearBinding, media, mediaIdx, addMedia, removeMedia, selectMedia, error } = props
   const [prolink, setProlink] = useState<{ connected: boolean; reason?: string }>({ connected: false })
 
   useEffect(() => {
@@ -105,6 +107,30 @@ export default function Settings(props: {
       <select className="field" value={presetName} onChange={e => applyPreset(e.target.value)}>
         {presets.map(p => <option key={p} value={p}>{p}</option>)}
       </select>
+
+      <h3>Média (image / vidéo)</h3>
+      <label className="btn" style={{ display: 'block', textAlign: 'center', cursor: 'pointer' }}>
+        + Ajouter image / vidéo
+        <input type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} onChange={e => { addMedia(e.target.files); e.currentTarget.value = '' }} />
+      </label>
+      {media.length > 0 && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6, marginTop: 8 }}>
+            {media.map((m, i) => (
+              <div key={m.id} onClick={() => selectMedia(i)} title={m.name}
+                style={{ position: 'relative', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', cursor: 'pointer', border: i === mediaIdx ? '2px solid #a855f7' : '1px solid rgba(255,255,255,.15)' }}>
+                {m.type === 'video'
+                  ? <video src={m.url} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : <img src={m.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                <button className="tool" onClick={e => { e.stopPropagation(); removeMedia(m.id) }}
+                  style={{ position: 'absolute', top: 2, right: 2, padding: '0 5px', lineHeight: '18px', fontSize: 11 }}>✕</button>
+                {m.type === 'video' && <span style={{ position: 'absolute', bottom: 2, left: 4, fontSize: 10 }}>▶︎</span>}
+              </div>
+            ))}
+          </div>
+          <p className="muted" style={{ textAlign: 'left', marginTop: 6 }}>Touches : <b>M</b> afficher/masquer · <b>N</b> suivant · <b>Maj+N</b> précédent.</p>
+        </>
+      )}
 
       <h3>Mapping MIDI (live)</h3>
       {!midiOn ? (
