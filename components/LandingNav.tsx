@@ -53,6 +53,9 @@ export default function LandingNav() {
 
           {state.status === 'guest' && (
             <>
+              <Link href="/studio" className="hidden sm:inline px-3 py-2 rounded-xl text-sm text-gray-300 hover:text-white hover:bg-white/5 transition">
+                Studio
+              </Link>
               <Link href="/dj" className="px-3 sm:px-4 py-2 rounded-xl text-sm text-gray-300 hover:text-white hover:bg-white/5 transition">
                 Espace DJ
               </Link>
@@ -68,6 +71,10 @@ export default function LandingNav() {
               <span className="hidden sm:inline text-sm text-gray-400 mr-1">
                 Bonjour, <span className="text-white font-medium">{state.name}</span>
               </span>
+
+              <Link href="/studio" className="hidden sm:inline px-3 py-2 rounded-xl text-sm text-gray-300 hover:text-white hover:bg-white/5 transition">
+                Studio
+              </Link>
 
               {state.isAdmin && (
                 <Link href="/admin" className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-yellow-300 hover:bg-yellow-500/10 transition">
